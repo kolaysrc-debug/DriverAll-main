@@ -14,6 +14,7 @@ import { useSearchParams } from "next/navigation";
 import { fetchJobFilters, fetchPublicJobs, fetchLocationsList } from "@/lib/api/publicJobs";
 import { listMyApplications } from "@/lib/api/applications";
 import FilterDrawer from "@/components/FilterDrawer";
+import FloatingActionButton from "@/components/FloatingActionButton";
 
 type FilterNode = { key: string; label: string };
 type FilterGroup = { groupKey: string; groupLabel: string; nodes: FilterNode[] };
@@ -1250,6 +1251,38 @@ export default function JobsPage() {
             )}
           </section>
         </div>
+
+        {/* Floating Action Button - Tek Elle Kullanım */}
+        <FloatingActionButton
+          actions={[
+            {
+              icon: "🔍",
+              label: "Filtreler",
+              onClick: () => setFilterDrawerOpen(true),
+              color: "emerald"
+            },
+            {
+              icon: "🎯",
+              label: "Aramayı Sıfırla",
+              onClick: clearAll,
+              color: "sky"
+            },
+            {
+              icon: viewMode === "list" ? "🗺️" : "📋",
+              label: viewMode === "list" ? "Harita Gör" : "Liste Gör",
+              onClick: () => setViewMode(viewMode === "list" ? "map" : "list"),
+              color: "violet"
+            },
+            {
+              icon: "🏠",
+              label: "Ana Sayfa",
+              href: "/",
+              color: "amber"
+            }
+          ]}
+          mainIcon="☰"
+          mainLabel="Menü"
+        />
       </div>
     </div>
   );
