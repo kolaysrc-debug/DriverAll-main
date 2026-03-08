@@ -1,0 +1,8 @@
+#!/bin/sh
+# Auto-generate dev handoff snapshot before each commit
+
+set -e
+
+node "drivercv-backend/scripts/exportHandoff.js"
+
+git add "handoff/latest.md" "handoff/latest.json"

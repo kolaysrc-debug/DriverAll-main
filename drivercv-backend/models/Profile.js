@@ -42,8 +42,12 @@ const profileSchema = new Schema(
       label: { type: String, default: "" }, // "Ankara / Çankaya" gibi
     },
 
+    birthDate: { type: Date, default: null },
+
     about: { type: String, default: "" },
     experienceYears: { type: Number, default: null },
+
+    avatarUrl: { type: String, default: "" },
 
     // serbest alanlar (ileride genişleteceğiz)
     dynamicValues: { type: Schema.Types.Mixed, default: {} },

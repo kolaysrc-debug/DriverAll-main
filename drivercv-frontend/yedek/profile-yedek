@@ -1,0 +1,1105 @@
+"use client";
+
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  GroupNode,
+  Reason,
+  resolveGroupSelection,
+  isAutoAdded,
+} from "@/lib/groupCriteriaEngine";
+
+type Profile = {
+  role?: string;
+  fullName?: string;
+  phone?: string;
+  country?: string;
+  city?: string;
+
+  cityCode?: string;
+  district?: string;
+  districtCode?: string;
+about?: string;
+  experienceYears?: number | null;
+  dynamicValues?: Record<string, any>;
+};
+
+type CvDoc = {
+  _id?: string;
+  userId: string;
+  values: Record<string, any>;
+};
+
+type FieldDefinition = {
+  _id: string;
+  key: string;
+  label: string;
+  description?: string;
+  groupKey?: string | null;
+  groupLabelOverride?: string | null;
+  category?: string | null;
+
+  showInCv?: boolean;
+  showInJob?: boolean;
+  showInProfile?: boolean;
+
+  country?: string | null;
+
+  valueType?:
+    | "boolean"
+    | "enum"
+    | "multiEnum"
+    | "string"
+    | "number"
+    | "date";
+  enumValues?: string[];
+
+  coversKeys?: string[];
+  requiresKeys?: string[];
+
+  active?: boolean;
+};
+
+type CvFieldGroup = {
+  groupKey: string;
+  groupLabel: string;
+  fields: FieldDefinition[];
+};
+
+// Lokasyon API (Location)
+type LocationItem = {
+  code: string;
+  name: string;
+  level: "country" | "state" | "city" | "district" | string;
+  countryCode?: string;
+  parentCode?: string | null;
+};
+
+function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem("token");
+}
+
+function normalizeCountryCode(input: any, fallback: string): string {
+  const raw =
+    typeof input === "string" ? input : input == null ? "" : String(input);
+  const s = raw.trim();
+  if (!s) return fallback;
+  const u = s.toUpperCase();
+  if (u === "ALL") return "ALL";
+
+  // Basit alias haritası (kullanıcı "Türkiye" gibi yazarsa kırılmasın)
+  const alias: Record<string, string> = {
+    TURKEY: "TR",
+    TURKIYE: "TR",
+    "TÜRKİYE": "TR",
+    "TÜRKİYE CUMHURİYETİ": "TR",
+    "TURKIYE CUMHURIYETI": "TR",
+    "TURKIYE CUMHURİYETİ": "TR",
+  };
+
+  if (alias[u]) return alias[u];
+
+  // ISO2 gibi girildiyse
+  if (u.length === 2) return u;
+
+  // Bilinmeyen değer: olduğu gibi döndür (admin tarafında ISO2'ye zorlayacağız)
+  return u;
+}
+
+// CV içinde manuel seçim listesini saklamak için meta key
+const CV_MANUAL_META_KEY = "__cvManualKeys";
+
+export default function ProfilePage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Profil
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileInfo, setProfileInfo] = useState<string | null>(null);
+
+  // Profil form alanları
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [country, setCountry] = useState("TR");
+  const [city, setCity] = useState("");
+
+  const [cityCode, setCityCode] = useState("");
+  const [district, setDistrict] = useState("");
+  const [districtCode, setDistrictCode] = useState("");
+
+  // Lokasyon seçenekleri (TR için)
+  const [cityOptions, setCityOptions] = useState<LocationItem[]>([]);
+  const [districtOptions, setDistrictOptions] = useState<LocationItem[]>([]);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const [loadingDistricts, setLoadingDistricts] = useState(false);
+  const [about, setAbout] = useState("");
+  const [experienceYears, setExperienceYears] = useState<string>("");
+
+  // CV
+  const [cvDoc, setCvDoc] = useState<CvDoc | null>(null);
+  const [cvValues, setCvValues] = useState<Record<string, any>>({});
+  const [fields, setFields] = useState<FieldDefinition[]>([]);
+  const [savingCv, setSavingCv] = useState(false);
+  const [cvInfo, setCvInfo] = useState<string | null>(null);
+  const [cvLocked, setCvLocked] = useState<boolean>(true);
+
+  // CV değişiklik takibi (yenileyince kaybolmasın diye autosave)
+  const [cvDirty, setCvDirty] = useState(false);
+  const savingCvRef = useRef(false);
+  const autoSaveTimerRef = useRef<any>(null);
+
+  // Kriter motoru (CV boolean kriterleri için)
+  const [cvManualKeys, setCvManualKeys] = useState<string[]>([]);
+  const [cvReasons, setCvReasons] = useState<Record<string, Reason>>({});
+  const initDepsRef = useRef(false);
+  const [depsInitialized, setDepsInitialized] = useState(false);
+
+  // ------------------------------------------------------
+  // İlk yükleme: profil + CV + alan tanımları
+  // ------------------------------------------------------
+  useEffect(() => {
+    async function loadAll() {
+      setLoading(true);
+      setError(null);
+      setProfileInfo(null);
+      setCvInfo(null);
+
+      try {
+        const token = getToken();
+        if (!token) {
+          setError("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
+          setLoading(false);
+          return;
+        }
+const headersAuth: HeadersInit = {
+          Authorization: `Bearer ${token}`,
+        };
+
+        const [profileRes, cvRes, fieldsRes] = await Promise.all([
+          fetch("/api/profile/me", { headers: headersAuth }),
+          fetch("/api/cv", { headers: headersAuth }),
+          fetch("/api/admin/fields", { headers: headersAuth }),
+        ]);
+
+        if (!profileRes.ok)
+          throw new Error("Profil bilgileri alınırken bir hata oluştu.");
+        const profileJson = await profileRes.json();
+        const profileData: Profile = profileJson.profile || {};
+
+        setProfile(profileData);
+        setFullName(profileData.fullName || "");
+        setPhone(profileData.phone || "");
+        setCountry(normalizeCountryCode(profileData.country, "TR"));
+        setCity(profileData.city || "");
+
+        setCityCode((profileData as any).cityCode || "");
+        setDistrict((profileData as any).district || "");
+        setDistrictCode((profileData as any).districtCode || "");
+setAbout(profileData.about || "");
+        setExperienceYears(
+          profileData.experienceYears != null
+            ? String(profileData.experienceYears)
+            : ""
+        );
+
+        if (!cvRes.ok) throw new Error("CV bilgisi alınırken bir hata oluştu.");
+        const cvJson = await cvRes.json();
+        const cv: CvDoc =
+          cvJson.cv ||
+          ({
+            userId: "",
+            values: {},
+          } as CvDoc);
+
+        setCvDoc(cv);
+        setCvValues(cv.values || {});
+        setCvDirty(false);
+
+        if (!fieldsRes.ok)
+          throw new Error("Kriter listesi alınırken bir hata oluştu.");
+        const fieldsJson = await fieldsRes.json();
+        const fieldList: FieldDefinition[] = fieldsJson.fields || [];
+        setFields(fieldList);
+
+        // yeni veri geldi; dependency init bir kere daha kurulabilsin
+        initDepsRef.current = false;
+        setDepsInitialized(false);
+        setCvManualKeys([]);
+        setCvReasons({});
+      } catch (err: any) {
+        console.error("ProfilePage loadAll error:", err);
+        setError(err?.message || "Bilgiler alınırken beklenmeyen bir hata oluştu.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadAll();
+  }, []);
+
+
+  // ------------------------------------------------------
+  // TR lokasyon listesi (il / ilçe)
+  // - İl listesi: /api/locations/list?country=TR&level=city (DB'de state olarak tutuluyor)
+  // - İlçe listesi: şu an DB'de yoksa serbest metin input'a düşer
+  // ------------------------------------------------------
+  useEffect(() => {
+    const effectiveCountry = normalizeCountryCode(country, "TR");
+    if (effectiveCountry !== "TR") {
+      setCityOptions([]);
+      setDistrictOptions([]);
+      return;
+    }
+
+    async function loadCitiesForTR() {
+      try {
+        setLoadingCities(true);
+        const res = await fetch(`/api/locations/list?country=TR&level=city`, {
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          setCityOptions([]);
+          return;
+        }
+        const data = await res.json().catch(() => null);
+       const items: LocationItem[] = (data?.list || data?.locations || []);
+        // API state'i level=city ile dönüyor olabilir; sadece name/code yeterli
+        setCityOptions(
+          items
+            .filter((x) => x && x.code && x.name)
+            .map((x) => ({
+              code: String(x.code),
+              name: String(x.name),
+              level: (x.level as any) || "state",
+              countryCode: (x as any).countryCode,
+              parentCode: (x as any).parentCode ?? null,
+            }))
+        );
+      } finally {
+        setLoadingCities(false);
+      }
+    }
+
+    loadCitiesForTR();
+  }, [country]);
+
+  // İl (city) dolu ama cityCode boşsa, liste geldikten sonra otomatik eşleştirme
+  useEffect(() => {
+    const effectiveCountry = normalizeCountryCode(country, "TR");
+    if (effectiveCountry !== "TR") return;
+    if (cityCode) return;
+    if (!city.trim()) return;
+    if (!cityOptions.length) return;
+
+    const found = cityOptions.find((x) => x.name.toLowerCase() === city.trim().toLowerCase());
+    if (found) setCityCode(found.code);
+  }, [country, city, cityCode, cityOptions]);
+
+
+  useEffect(() => {
+    const effectiveCountry = normalizeCountryCode(country, "TR");
+    if (effectiveCountry !== "TR") {
+      setDistrictOptions([]);
+      return;
+    }
+
+    // İl seçilmediyse: ilçe listesi yok
+    if (!cityCode) {
+      setDistrictOptions([]);
+      return;
+    }
+
+    async function loadDistrictsForCity() {
+      try {
+        setLoadingDistricts(true);
+        const res = await fetch(
+          `/api/locations/list?country=TR&level=district&parentCode=${encodeURIComponent(cityCode)}`,
+          { cache: "no-store" }
+        );
+        if (!res.ok) {
+          setDistrictOptions([]);
+          return;
+        }
+        const data = await res.json().catch(() => null);
+        const items: LocationItem[] = (data?.list || data?.locations || []);
+        setDistrictOptions(
+          items
+            .filter((x) => x && x.code && x.name)
+            .map((x) => ({
+              code: String(x.code),
+              name: String(x.name),
+              level: (x.level as any) || "district",
+              countryCode: (x as any).countryCode,
+              parentCode: (x as any).parentCode ?? null,
+            }))
+        );
+      } finally {
+        setLoadingDistricts(false);
+      }
+    }
+
+    loadDistrictsForCity();
+  }, [country, cityCode]);
+// ------------------------------------------------------
+  // Profil kaydet
+  // ------------------------------------------------------
+  async function handleSaveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingProfile(true);
+    setError(null);
+    setProfileInfo(null);
+
+    try {
+      const token = getToken();
+      if (!token) {
+        setError("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
+        setSavingProfile(false);
+        return;
+      }
+
+      const effectiveRole = String(profile?.role || 'driver');
+      const effectiveCountry = normalizeCountryCode(country, 'TR');
+
+        const body: Profile = {
+        role: profile?.role || "driver",
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        country: normalizeCountryCode(country, "TR"),
+        city: city.trim(),
+        cityCode: cityCode || "",
+        district: district.trim(),
+        districtCode: districtCode || "",
+        about: about.trim(),
+        experienceYears:
+          experienceYears.trim() === "" ? null : Number(experienceYears.trim()),
+        dynamicValues: profile?.dynamicValues || {},
+      };
+
+      const res = await fetch("/api/profile/me", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.message || "Profil kaydedilirken bir hata oluştu.");
+      }
+
+      const updated = await res.json().catch(() => null);
+      if (updated?.profile) setProfile(updated.profile);
+      else setProfile(body);
+
+      setProfileInfo("Profil bilgileriniz başarıyla kaydedildi.");
+    } catch (err: any) {
+      console.error("handleSaveProfile error:", err);
+      setError(err?.message || "Profil kaydedilemedi.");
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  // ------------------------------------------------------
+  // CV alanlarını FieldDefinition'dan oluştur
+  // ------------------------------------------------------
+  const cvFieldGroups: CvFieldGroup[] = useMemo(() => {
+    if (!fields || fields.length === 0) return [];
+
+    const effectiveCountry = normalizeCountryCode(country, "TR");
+    const map = new Map<string, CvFieldGroup>();
+
+    for (const f of fields) {
+      if (f.active === false) continue;
+
+      const anyObj: any = f as any;
+      const rawShowInCv = anyObj.showInCv ?? anyObj.showCv ?? anyObj.cv ?? null;
+
+      const hasShowFlag =
+        Object.prototype.hasOwnProperty.call(anyObj, "showInCv") ||
+        Object.prototype.hasOwnProperty.call(anyObj, "showCv") ||
+        Object.prototype.hasOwnProperty.call(anyObj, "cv");
+
+      let showFlag: boolean;
+      if (hasShowFlag) showFlag = !!rawShowInCv;
+      else showFlag = true;
+
+      if (!showFlag) continue;
+
+      const fc = normalizeCountryCode(f.country, "ALL");
+      if (fc !== "ALL" && fc !== effectiveCountry) continue;
+
+      const gk = (f.groupKey || "GENEL").trim() || "GENEL";
+      const gl =
+        (f.groupLabelOverride || "").trim() || (gk === "GENEL" ? "Genel" : gk);
+
+      const existing = map.get(gk);
+      if (!existing) map.set(gk, { groupKey: gk, groupLabel: gl, fields: [f] });
+      else existing.fields.push(f);
+    }
+
+    const arr = Array.from(map.values());
+    arr.sort((a, b) => a.groupLabel.localeCompare(b.groupLabel, "tr"));
+    for (const g of arr)
+      g.fields.sort((a, b) =>
+        (a.label || "").localeCompare(b.label || "", "tr")
+      );
+
+    return arr;
+  }, [fields, country]);
+
+  // ------------------------------------------------------
+  // CV boolean kriterleri için: coversKeys/requiresKeys motoru
+  // (FieldDefinition -> GroupNode map)
+  // ------------------------------------------------------
+  const cvBooleanFields = useMemo(() => {
+    const flat = cvFieldGroups.flatMap((g) => g.fields);
+    return flat.filter((f) => (f.valueType || "boolean") === "boolean");
+  }, [cvFieldGroups]);
+
+  const cvDepNodes: GroupNode[] = useMemo(() => {
+    return cvBooleanFields.map((f) => ({
+      key: f.key,
+      label: f.label,
+      coverage: Array.isArray(f.coversKeys) ? f.coversKeys : [],
+      requiredWith: Array.isArray(f.requiresKeys) ? f.requiresKeys : [],
+      active: f.active !== false,
+    }));
+  }, [cvBooleanFields]);
+
+  const cvDepKeySet = useMemo(
+    () => new Set(cvDepNodes.map((n) => n.key)),
+    [cvDepNodes]
+  );
+
+  // İlk init:
+  // - Eğer DB'de __cvManualKeys varsa onu kullan
+  // - Yoksa cvValues içindeki true boolean’ları manual kabul et (geriye dönük uyumluluk)
+  useEffect(() => {
+    if (initDepsRef.current) return;
+
+    // İlk veri yüklenirken init'i "tamamlandı" sayma; sadece bekle.
+    if (loading) return;
+
+    // Field/kriter listesi gelmeden init'i "tamamlandı" sayma; sadece bekle.
+    if (!cvDepNodes.length) return;
+
+    const stored: any = (cvValues as any)?.[CV_MANUAL_META_KEY];
+    if (Array.isArray(stored)) {
+      const initialManual = stored
+        .map((x) => String(x).trim())
+        .filter((k) => k && cvDepKeySet.has(k));
+
+      setCvManualKeys(initialManual);
+      initDepsRef.current = true;
+      setDepsInitialized(true);
+      return;
+    }
+
+    const initialManual = cvDepNodes
+      .map((n) => n.key)
+      .filter((k) => !!cvValues[k]);
+
+    setCvManualKeys(initialManual);
+    initDepsRef.current = true;
+    setDepsInitialized(true);
+  }, [loading, cvDepNodes, cvValues, cvDepKeySet]);
+
+  const cvResolved = useMemo(() => {
+    return resolveGroupSelection(cvManualKeys, cvDepNodes);
+  }, [cvManualKeys, cvDepNodes]);
+
+  // effective -> cvValues’a uygula (sadece boolean kriterler)
+  useEffect(() => {
+    // İlk init tamamlanmadan effective değerleri yazma.
+    // Aksi halde refresh'te kısa süreli boş state tüm boolean'ları false'a çekebilir.
+    if (loading) return;
+    if (!depsInitialized) return;
+    if (!cvDepNodes.length) return;
+
+    const eff = new Set(cvResolved.effectiveKeys);
+    setCvReasons(cvResolved.reasons);
+
+    setCvValues((prev) => {
+      const next = { ...prev };
+      for (const n of cvDepNodes) {
+        next[n.key] = eff.has(n.key);
+      }
+      return next;
+    });
+  }, [loading, depsInitialized, cvResolved, cvDepNodes]);
+
+  function markCvDirty() {
+    setCvDirty(true);
+  }
+
+  function updateCvValue(key: string, value: any) {
+    if (cvLocked) return;
+    markCvDirty();
+    setCvValues((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function handleCvBooleanToggle(fieldKey: string, nextChecked: boolean) {
+    if (cvLocked) return;
+    const k = (fieldKey || "").trim();
+    if (!k) return;
+
+    // Auto eklenenler kilit: kaldırmak için onu doğuran manuel seçimi kaldır
+    if (isAutoAdded(cvReasons, k)) {
+      setCvInfo(
+        `"${k}" kriteri otomatik eklendi (ön şart/kapsama). Kaldırmak için onu doğuran kriteri kaldırın.`
+      );
+      return;
+    }
+
+    markCvDirty();
+    setCvManualKeys((prev) => {
+      const set = new Set(prev);
+      if (nextChecked) set.add(k);
+      else set.delete(k);
+      return Array.from(set);
+    });
+  }
+
+  // ------------------------------------------------------
+  // CV kaydet (ortak fonksiyon)
+  // ------------------------------------------------------
+  async function saveCv(options?: { lockAfter?: boolean; silent?: boolean }) {
+    const lockAfter = options?.lockAfter ?? false;
+    const silent = options?.silent ?? false;
+
+    if (savingCvRef.current) return;
+
+    savingCvRef.current = true;
+    setSavingCv(true);
+    if (!silent) {
+      setError(null);
+      setCvInfo(null);
+    }
+
+    try {
+      const token = getToken();
+      if (!token) {
+        setError("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
+        return;
+      }
+
+      // Manuel seçimi meta olarak da sakla (reload sonrası aynı mantıkla devam eder)
+      const valuesToSave = {
+        ...cvValues,
+        [CV_MANUAL_META_KEY]: cvManualKeys,
+      };
+
+      const res = await fetch("/api/cv", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ values: valuesToSave }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.message || "CV kaydedilirken hata oluştu.");
+      }
+
+      const data = await res.json().catch(() => null);
+      if (data?.cv) {
+        setCvDoc(data.cv);
+        setCvValues(data.cv.values || {});
+      }
+
+      setCvDirty(false);
+      if (!silent) setCvInfo("CV kaydedildi.");
+      if (lockAfter) setCvLocked(true);
+    } catch (err: any) {
+      console.error("saveCv error:", err);
+      setError(err?.message || "CV kaydedilemedi.");
+    } finally {
+      setSavingCv(false);
+      savingCvRef.current = false;
+    }
+  }
+
+  // Kilit açıkken değişiklik olursa kısa bekleme ile otomatik kaydet
+  useEffect(() => {
+    if (cvLocked) return;
+    if (!cvDirty) return;
+
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      // sessiz autosave
+      saveCv({ silent: true, lockAfter: false });
+    }, 900);
+
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cvDirty, cvLocked, cvManualKeys, cvValues]);
+
+  // ------------------------------------------------------
+  // CV input render
+  // ------------------------------------------------------
+  function renderCvFieldInput(field: FieldDefinition) {
+    const value = cvValues[field.key];
+
+    const commonWrap =
+      "w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-1.5 text-xs outline-none";
+
+    const label = (
+      <label className="block text-[11px] text-slate-300 mb-1">
+        {field.label}
+        {field.description ? (
+          <span className="ml-2 text-[10px] text-slate-500">
+            {field.description}
+          </span>
+        ) : null}
+      </label>
+    );
+
+    const vt = field.valueType || "boolean";
+
+    if (vt === "string") {
+      return (
+        <div>
+          {label}
+          <input
+            className={commonWrap}
+            value={value ?? ""}
+            disabled={cvLocked}
+            onChange={(e) => updateCvValue(field.key, e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (vt === "number") {
+      return (
+        <div>
+          {label}
+          <input
+            type="number"
+            className={commonWrap}
+            value={value ?? ""}
+            disabled={cvLocked}
+            onChange={(e) =>
+              updateCvValue(
+                field.key,
+                e.target.value === "" ? "" : Number(e.target.value)
+              )
+            }
+          />
+        </div>
+      );
+    }
+
+    if (vt === "date") {
+      return (
+        <div>
+          {label}
+          <input
+            type="date"
+            className={commonWrap}
+            value={value ?? ""}
+            disabled={cvLocked}
+            onChange={(e) => updateCvValue(field.key, e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (vt === "enum") {
+      const options = field.enumValues || [];
+      return (
+        <div>
+          {label}
+          <select
+            className={commonWrap}
+            value={value ?? ""}
+            disabled={cvLocked}
+            onChange={(e) => updateCvValue(field.key, e.target.value)}
+          >
+            <option value="">Seçiniz</option>
+            {options.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+
+    if (vt === "multiEnum") {
+      const options = field.enumValues || [];
+      const current: string[] = Array.isArray(value) ? value : [];
+      return (
+        <div>
+          {label}
+          <div className="flex flex-wrap gap-2">
+            {options.map((opt) => {
+              const checked = current.includes(opt);
+              return (
+                <label
+                  key={opt}
+                  className="inline-flex items-center gap-2 text-xs text-slate-200 border border-slate-800 rounded-lg px-2 py-1 bg-slate-950/40"
+                >
+                  <input
+                    type="checkbox"
+                    disabled={cvLocked}
+                    checked={checked}
+                    onChange={() => {
+                      if (cvLocked) return;
+                      markCvDirty();
+                      setCvValues((prev) => {
+                        const cur: string[] = Array.isArray(prev[field.key])
+                          ? prev[field.key]
+                          : [];
+                        if (checked)
+                          return {
+                            ...prev,
+                            [field.key]: cur.filter((x) => x !== opt),
+                          };
+                        return { ...prev, [field.key]: [...cur, opt] };
+                      });
+                    }}
+                  />
+                  <span>{opt}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    // boolean (default)
+    const isDepKey = cvDepKeySet.has(field.key);
+    const auto = isDepKey ? isAutoAdded(cvReasons, field.key) : false;
+
+    return (
+      <div className="flex items-center gap-2 border border-slate-800 rounded-lg px-3 py-2 bg-slate-950/30">
+        <input
+          type="checkbox"
+          disabled={cvLocked || (isDepKey && auto)}
+          checked={!!value}
+          onChange={(e) => {
+            if (cvLocked) return;
+            if (isDepKey) {
+              handleCvBooleanToggle(field.key, e.target.checked);
+            } else {
+              updateCvValue(field.key, e.target.checked);
+            }
+          }}
+        />
+        <div>
+          <div className="text-xs text-slate-100">
+            {field.label}
+            {isDepKey && auto ? (
+              <span className="ml-2 text-[10px] text-slate-400">(auto)</span>
+            ) : null}
+          </div>
+          {field.description ? (
+            <div className="text-[10px] text-slate-500">{field.description}</div>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
+  // ------------------------------------------------------
+  // CV kaydet (form submit)
+  // ------------------------------------------------------
+  async function handleSaveCv(e: React.FormEvent) {
+    e.preventDefault();
+    await saveCv({ silent: false, lockAfter: true });
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
+        <div className="text-sm text-slate-300">Yükleniyor...</div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-lg font-semibold">Profil & CV</h1>
+            <p className="text-xs text-slate-500">
+              Profilinizi güncelleyin, CV kriterlerinizi yönetin.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={async () => {
+              // Kilidi aç
+              if (cvLocked) {
+                setCvInfo(null);
+                setCvLocked(false);
+                return;
+              }
+
+              // Kilidi kapatırken: dirty ise otomatik kaydet + kilitle
+              if (cvDirty) {
+                await saveCv({ silent: false, lockAfter: true });
+              } else {
+                setCvLocked(true);
+                setCvInfo("CV kilitlendi.");
+              }
+            }}
+            className="px-3 py-1.5 text-xs rounded-lg border border-slate-700 hover:bg-slate-900"
+          >
+            {cvLocked ? "CV Düzenle" : cvDirty ? "Kaydet & Kilitle" : "CV Kilitle"}
+          </button>
+        </div>
+
+        {error ? (
+          <div className="mt-4 border border-rose-900 bg-rose-950/30 text-rose-200 rounded-lg px-3 py-2 text-xs">
+            {error}
+          </div>
+        ) : null}
+
+        <div className="mt-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {/* SOL: PROFİL */}
+          <section className="lg:col-span-3 border border-slate-800 rounded-xl p-4 bg-slate-950/40">
+            <h2 className="text-sm font-semibold">Profil Bilgileri</h2>
+
+            {profileInfo ? (
+              <div className="mt-3 border border-emerald-900 bg-emerald-950/30 text-emerald-200 rounded-lg px-3 py-2 text-xs">
+                {profileInfo}
+              </div>
+            ) : null}
+
+            <form onSubmit={handleSaveProfile} className="mt-4 space-y-3">
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="block text-xs text-slate-300">Ad Soyad</label>
+                  <input
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-1.5 text-xs outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs text-slate-300">Telefon</label>
+                  <input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-1.5 text-xs outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs text-slate-300">Ülke</label>
+                  <input
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-1.5 text-xs outline-none"
+                    placeholder="TR"
+                  />
+                  <p className="text-[10px] text-slate-500">
+                    Ülke kodu (ISO2). Şimdilik "TR" kullanın.
+                  </p>
+                </div>
+
+                {normalizeCountryCode(country, "TR") === "TR" ? (
+                  <>
+                    <div className="space-y-1">
+                      <label className="block text-xs text-slate-300">İl</label>
+                      <select
+                        value={cityCode || ""}
+                        onChange={(e) => {
+                          const nextCode = e.target.value;
+                          setCityCode(nextCode);
+                          const found = cityOptions.find((x) => x.code === nextCode);
+                          // city alanını geriye dönük uyumluluk için label/name olarak da dolduruyoruz
+                          setCity(found?.name || "");
+                          // İl değişince ilçe seçimini sıfırla
+                          setDistrictCode("");
+                          setDistrict("");
+                        }}
+                        className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-1.5 text-xs outline-none"
+                      >
+                        <option value="">{loadingCities ? "Yükleniyor..." : "İl seçiniz"}</option>
+                        {cityOptions.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                      {/* İl listesi yoksa fallback */}
+                      {(!loadingCities && cityOptions.length === 0) ? (
+                        <input
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                          className="mt-2 w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-1.5 text-xs outline-none"
+                          placeholder="İl adını yazın (liste yok)"
+                        />
+                      ) : null}
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-xs text-slate-300">İlçe</label>
+
+                      {districtOptions.length > 0 ? (
+                        <select
+                          value={districtCode || ""}
+                          onChange={(e) => {
+                            const nextCode = e.target.value;
+                            setDistrictCode(nextCode);
+                            const found = districtOptions.find((x) => x.code === nextCode);
+                            setDistrict(found?.name || "");
+                          }}
+                          className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-1.5 text-xs outline-none"
+                        >
+                          <option value="">{loadingDistricts ? "Yükleniyor..." : "İlçe seçiniz"}</option>
+                          {districtOptions.map((d) => (
+                            <option key={d.code} value={d.code}>
+                              {d.name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          value={district}
+                          onChange={(e) => setDistrict(e.target.value)}
+                          className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-1.5 text-xs outline-none"
+                          placeholder="İlçe (şimdilik yazı)"
+                        />
+                      )}
+
+                      <p className="text-[10px] text-slate-500">
+                        Not: İlçe listesi henüz DB'de yoksa serbest metin olarak kaydedilir.
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-1">
+                    <label className="block text-xs text-slate-300">Şehir</label>
+                    <input
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-1.5 text-xs outline-none"
+                    />
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <label className="block text-xs text-slate-300">Deneyim (Yıl)</label>
+                  <input
+                    value={experienceYears}
+                    onChange={(e) => setExperienceYears(e.target.value)}
+                    className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-1.5 text-xs outline-none"
+                  />
+                </div>
+
+                {/* AÇIKLAMA / HAKKIMDA: önceki gibi aç/kapat */}
+                <details className="rounded-lg border border-slate-800 bg-slate-950/30">
+                  <summary className="cursor-pointer select-none px-3 py-2 text-xs text-slate-300 [&::-webkit-details-marker]:hidden">
+                    Hakkımda / Kısa Özet
+                    <span className="ml-2 text-[10px] text-slate-500">(Aç/Kapat)</span>
+                  </summary>
+
+                  <div className="px-3 pb-3 pt-1">
+                    <textarea
+                      value={about}
+                      onChange={(e) => setAbout(e.target.value)}
+                      className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-1.5 text-xs outline-none min-h-[90px]"
+                      placeholder="Kısaca kendinizi tanıtın..."
+                    />
+                  </div>
+                </details>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={savingProfile}
+                  className="px-4 py-1.5 text-xs rounded-lg bg-emerald-500 text-slate-950 font-semibold hover:bg-emerald-400 disabled:opacity-60"
+                >
+                  {savingProfile ? "Kaydediliyor..." : "Profili Kaydet"}
+                </button>
+              </div>
+            </form>
+          </section>
+
+          {/* SAĞ: CV */}
+          <section className="lg:col-span-9 border border-slate-800 rounded-xl p-4 bg-slate-950/40">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold">CV Kriterleri</h2>
+              <div className="text-[11px] text-slate-500">
+                {cvLocked ? "Kilitli" : cvDirty ? "Değişiklik var (autosave aktif)" : "Düzenlenebilir"}
+              </div>
+            </div>
+
+            {cvInfo ? (
+              <div className="mt-3 border border-sky-900 bg-sky-950/30 text-sky-200 rounded-lg px-3 py-2 text-xs">
+                {cvInfo}
+              </div>
+            ) : null}
+
+            <form onSubmit={handleSaveCv} className="mt-4 space-y-3">
+              {cvFieldGroups.length === 0 ? (
+                <p className="text-xs text-slate-500">
+                  CV kriteri bulunamadı.{" "}
+                  <span className="font-semibold text-slate-300">/admin/fields</span>{" "}
+                  ekranında &quot;CV&apos;de Göster&quot; alanını işaretleyerek kriter tanımlayın.
+                </p>
+              ) : null}
+
+              {cvFieldGroups.map((group) => (
+                <div
+                  key={group.groupKey}
+                  className="border border-slate-800 rounded-lg p-3 space-y-2"
+                >
+                  <h3 className="text-xs font-semibold text-slate-100 mb-1">
+                    {group.groupLabel}
+                  </h3>
+
+                  {/* 3 sütun */}
+                  <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
+                    {group.fields.map((field) => (
+                      <div key={field._id} className="mb-2 break-inside-avoid">
+                        {renderCvFieldInput(field)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={savingCv || cvLocked}
+                  className="px-4 py-1.5 text-xs rounded-lg bg-sky-500 text-slate-950 font-semibold hover:bg-sky-400 disabled:opacity-60"
+                >
+                  {savingCv ? "Kaydediliyor..." : "CV Kaydet"}
+                </button>
+              </div>
+
+              {cvLocked ? (
+                <p className="text-[11px] text-slate-500">
+                  CV düzenlemek için üstteki <strong>CV Düzenle</strong> butonuna basın.
+                </p>
+              ) : (
+                <p className="text-[11px] text-slate-500">
+                  İpucu: Düzenleme modunda yaptığınız değişiklikler kısa aralıklarla otomatik kaydedilir.
+                </p>
+              )}
+            </form>
+          </section>
+        </div>
+      </div>
+    </main>
+  );
+}

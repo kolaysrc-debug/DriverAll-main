@@ -1,0 +1,322 @@
+**********************
+PowerShell transcript start
+Start time: 20260306233325
+Username: ADRTURK_HGD\hgd_h
+RunAs User: ADRTURK_HGD\hgd_h
+Configuration Name: 
+Machine: ADRTURK_HGD (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\Program Files\WindowsApps\Microsoft.PowerShell_7.5.4.0_x64__8wekyb3d8bbwe\pwsh.dll -noexit -command try { . "c:\Users\hgd_h\AppData\Local\Programs\Windsurf\resources\app\out\vs\workbench\contrib\terminal\common\scripts\shellIntegration.ps1" } catch {}
+Process ID: 15820
+PSVersion: 7.5.4
+PSEdition: Core
+GitCommitId: 7.5.4
+OS: Microsoft Windows 10.0.26200
+Platform: Win32NT
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1, 6.0, 7.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+WSManStackVersion: 3.0
+**********************
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>try {
+  Write-Host "ROOT   : $root"
+  Write-Host "RESTORE: $restore"
+  Write-Host "LOG    : $log"
+
+  if (!(Test-Path $root)) { throw "Root not found: $root" }
+  if (!(Test-Path $restore)) { throw "Restore not found: $restore" }
+
+  $node = Get-Process node -ErrorAction SilentlyContinue
+  if ($node) {
+    Write-Host "WARN: node.exe processes are running. This can lock files." -ForegroundColor Yellow
+    $node | Select-Object Id, ProcessName, Path, StartTime | Format-Table -AutoSize | Out-String | Write-Host
+  }
+
+  $fe = Join-Path $root 'drivercv-frontend'
+  $be = Join-Path $root 'drivercv-backend'
+
+  $feBakName = "drivercv-frontend__bak_$ts"
+  $beBakName = "drivercv-backend__bak_$ts"
+  $feBak = Join-Path $root $feBakName
+  $beBak = Join-Path $root $beBakName
+
+  if (Test-Path $fe) {
+    Rename-Item -Path $fe -NewName $feBakName -ErrorAction Stop
+    Write-Host "RENAMED: drivercv-frontend -> $feBakName"
+  }
+  if (Test-Path $be) {
+    Rename-Item -Path $be -NewName $beBakName -ErrorAction Stop
+    Write-Host "RENAMED: drivercv-backend  -> $beBakName"
+  }
+
+  $restoreFe = Join-Path $restore 'drivercv-frontend'
+  $restoreBe = Join-Path $restore 'drivercv-backend'
+  if (!(Test-Path $restoreFe)) { throw "Restore frontend folder missing: $restoreFe" }
+  if (!(Test-Path $restoreBe)) { throw "Restore backend folder missing: $restoreBe" }
+
+  Write-Host "COPY: frontend ..."
+  robocopy $restoreFe $fe /MIR /XD node_modules .next /R:2 /W:1 /NP
+  $rc = $LASTEXITCODE
+  Write-Host "ROBOCOPY frontend exit code: $rc"
+  if ($rc -ge 8) { throw "Robocopy frontend failed with code $rc" }
+
+  Write-Host "COPY: backend (exclude .env) ..."
+  robocopy $restoreBe $be /MIR /XD node_modules /XF .env /R:2 /W:1 /NP
+  $rc = $LASTEXITCODE
+  Write-Host "ROBOCOPY backend exit code: $rc"
+  if ($rc -ge 8) { throw "Robocopy backend failed with code $rc" }
+
+  $oldEnv = Join-Path $beBak '.env'
+  $newEnv = Join-Path $be '.env'
+  if (Test-Path $oldEnv) {
+    Copy-Item -Force $oldEnv $newEnv
+    Write-Host "ENV OK: copied .env from $beBakName"
+  } else {
+    Write-Host "WARN: previous .env not found at $oldEnv" -ForegroundColor Yellow
+  }
+
+  Write-Host 'DONE: 26 Feb restore completed.'
+}
+catch {
+  Write-Host "ERROR: $($_.Exception.Message)" -ForegroundColor Red
+  throw
+}
+ROOT   : D:\WINDSURF\DriverAll-main
+RESTORE: D:\WINDSURF\_restore\DriverAll-main_2026-02-26_0140
+LOG    : D:\WINDSURF\DriverAll-main\handoff\\restore_26feb_20260306_233324.log
+WARN: node.exe processes are running. This can lock files.
+
+   Id ProcessName Path                             StartTime
+   -- ----------- ----                             ---------
+11792 node        C:\Program Files\nodejs\node.exe 06.03.2026 02:37:27
+12076 node        C:\Program Files\nodejs\node.exe 06.03.2026 16:52:37
+13100 node        C:\Program Files\nodejs\node.exe 06.03.2026 21:53:00
+13732 node        C:\Program Files\nodejs\node.exe 06.03.2026 17:18:03
+14524 node        C:\Program Files\nodejs\node.exe 06.03.2026 16:52:38
+20764 node        C:\Program Files\nodejs\node.exe 06.03.2026 02:37:27
+22168 node        C:\Program Files\nodejs\node.exe 06.03.2026 21:52:49
+22892 node        C:\Program Files\nodejs\node.exe 06.03.2026 17:18:04
+23992 node        C:\Program Files\nodejs\node.exe 06.03.2026 21:53:05
+PS>TerminatingError(Rename-Item): "The running command stopped because the preference variable "ErrorActionPreference" or common parameter is set to Stop: The process cannot access the file because it is being used by another process."
+ERROR: The process cannot access the file because it is being used by another process.
+PS>TerminatingError(Rename-Item): "The running command stopped because the preference variable "ErrorActionPreference" or common parameter is set to Stop: The process cannot access the file because it is being used by another process."
+The running command stopped because the preference variable "ErrorActionPreference" or common parameter is set to Stop: The process cannot access the file because it is being used by another process.
+Rename-Item: 
+Line |
+  24 |      Rename-Item -Path $fe -NewName $feBakName -ErrorAction Stop
+     |      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | The process cannot access the file because it is being used by another process.
+]633;D;1]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>finally {
+  try { Stop-Transcript | Out-Null } catch {}
+}
+>> TerminatingError(): "The term 'finally' is not recognized as a name of a cmdlet, function, script file, or executable program.
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again."
+The term 'finally' is not recognized as a name of a cmdlet, function, script file, or executable program.
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+finally: The term 'finally' is not recognized as a name of a cmdlet, function, script file, or executable program.
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+]633;D;1]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$ErrorActionPreference = 'Stop'
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$root    = 'D:\WINDSURF\DriverAll-main'
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$restore = 'D:\WINDSURF\_restore\DriverAll-main_2026-02-26_0140'
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$ts = Get-Date -Format 'yyyyMMdd_HHmmss'
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$log = Join-Path $root ("handoff\\restore_26feb_$ts.log")
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>function Log([string]$m) {
+  $line = "[{0}] {1}" -f (Get-Date -Format 's'), $m
+  $line | Tee-Object -FilePath $log -Append
+}
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>Log "ROOT=$root"
+[2026-03-06T23:56:59] ROOT=D:\WINDSURF\DriverAll-main
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>Log "RESTORE=$restore"
+[2026-03-06T23:56:59] RESTORE=D:\WINDSURF\_restore\DriverAll-main_2026-02-26_0140
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>if (!(Test-Path $root)) { throw "Root not found: $root" }
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>if (!(Test-Path $restore)) { throw "Restore not found: $restore" }
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS># ------------------------------------------------------------
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS># Stop only node processes that reference this repo in command line
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS># ------------------------------------------------------------
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$procs = Get-CimInstance Win32_Process -Filter "name='node.exe'" | Select-Object ProcessId, CommandLine
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$targets = @($procs | Where-Object { ($_.CommandLine -like '*DriverAll-main*') -or ($_.CommandLine -like '*drivercv-frontend*') -or ($_.CommandLine -like '*drivercv-backend*') })
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>if ($targets.Count -gt 0) {
+  Log "Found node.exe processes referencing repo. Stopping them to avoid file locks..."
+  $targets | ForEach-Object { Log ("STOP node pid={0} cmd={1}" -f $_.ProcessId, $_.CommandLine) }
+  $targets | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+  Start-Sleep -Seconds 1
+} else {
+  Log "No repo-related node.exe process found."
+}
+[2026-03-06T23:57:01] Found node.exe processes referencing repo. Stopping them to avoid file locks...
+[2026-03-06T23:57:01] STOP node pid=20764 cmd="node"   "D:\WINDSURF\_restore\DriverAll-main_2026-02-26_0140\drivercv-backend\node_modules\.bin\\..\nodemon\bin\nodemon.js" server.js
+[2026-03-06T23:57:01] STOP node pid=14524 cmd="node"   "D:\WINDSURF\DriverAll-main\drivercv-backend\node_modules\.bin\\..\nodemon\bin\nodemon.js" server.js
+[2026-03-06T23:57:01] STOP node pid=22892 cmd="node"   "D:\WINDSURF\DriverAll-main\drivercv-frontend\node_modules\.bin\\..\next\dist\bin\next" dev
+[2026-03-06T23:57:01] STOP node pid=22168 cmd="C:\Program Files\nodejs\node.exe" D:\WINDSURF\DriverAll-main\drivercv-frontend\node_modules\next\dist\server\lib\start-server.js
+[2026-03-06T23:57:01] STOP node pid=23992 cmd="node" D:\WINDSURF\DriverAll-main\drivercv-frontend\.next\dev\build\postcss.js 48249
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS># ------------------------------------------------------------
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS># Save current backend .env separately (extra safety)
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS># ------------------------------------------------------------
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$envSrc = Join-Path $root 'drivercv-backend\.env'
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$envSaved = Join-Path $root ("handoff\\backend_env_$ts.env")
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>if (Test-Path $envSrc) {
+  Copy-Item -Force $envSrc $envSaved
+  Log "Saved backend .env to: $envSaved"
+} else {
+  Log "WARN: backend .env not found at $envSrc"
+}
+[2026-03-06T23:57:02] Saved backend .env to: D:\WINDSURF\DriverAll-main\handoff\\backend_env_20260306_235659.env
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS># ------------------------------------------------------------
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS># Rename current folders to timestamped backups
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS># ------------------------------------------------------------
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$fe = Join-Path $root 'drivercv-frontend'
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$be = Join-Path $root 'drivercv-backend'
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$feBakName = "drivercv-frontend__bak_$ts"
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$beBakName = "drivercv-backend__bak_$ts"
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$feBak = Join-Path $root $feBakName
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$beBak = Join-Path $root $beBakName
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>if (Test-Path $fe) {
+  Rename-Item -Path $fe -NewName $feBakName
+  Log "RENAMED frontend -> $feBakName"
+} else {
+  Log "WARN: frontend folder not found (already renamed?): $fe"
+}
+[2026-03-06T23:57:02] RENAMED frontend -> drivercv-frontend__bak_20260306_235659
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>if (Test-Path $be) {
+  Rename-Item -Path $be -NewName $beBakName
+  Log "RENAMED backend  -> $beBakName"
+} else {
+  Log "WARN: backend folder not found (already renamed?): $be"
+}
+[2026-03-06T23:57:03] RENAMED backend  -> drivercv-backend__bak_20260306_235659
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS># ------------------------------------------------------------
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS># Restore from 26 Feb backup using robocopy
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS># ------------------------------------------------------------
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$restoreFe = Join-Path $restore 'drivercv-frontend'
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$restoreBe = Join-Path $restore 'drivercv-backend'
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>if (!(Test-Path $restoreFe)) { throw "Restore frontend folder missing: $restoreFe" }
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>if (!(Test-Path $restoreBe)) { throw "Restore backend folder missing: $restoreBe" }
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>Log "ROBOCOPY frontend /MIR (exclude node_modules,.next)"
+[2026-03-06T23:57:03] ROBOCOPY frontend /MIR (exclude node_modules,.next)
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>robocopy $restoreFe $fe /MIR /XD node_modules .next /R:2 /W:1 /NP
+
+]633;D;1]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$rc = $LASTEXITCODE
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>Log "ROBOCOPY frontend exitcode=$rc"
+[2026-03-06T23:57:03] ROBOCOPY frontend exitcode=1
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>if ($rc -ge 8) { throw "Robocopy frontend failed with code $rc" }
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>Log "ROBOCOPY backend /MIR (exclude node_modules, exclude .env)"
+[2026-03-06T23:57:03] ROBOCOPY backend /MIR (exclude node_modules, exclude .env)
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>robocopy $restoreBe $be /MIR /XD node_modules /XF .env /R:2 /W:1 /NP
+
+]633;D;1]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$rc = $LASTEXITCODE
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>Log "ROBOCOPY backend exitcode=$rc"
+[2026-03-06T23:57:04] ROBOCOPY backend exitcode=1
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>if ($rc -ge 8) { throw "Robocopy backend failed with code $rc" }
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS># ------------------------------------------------------------
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS># Restore backend .env from previous backup folder (preferred), else from saved copy
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS># ------------------------------------------------------------
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$oldEnvFromBak = Join-Path $beBak '.env'
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>$newEnv = Join-Path $be '.env'
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>if (Test-Path $oldEnvFromBak) {
+  Copy-Item -Force $oldEnvFromBak $newEnv
+  Log "ENV restored from previous folder: $oldEnvFromBak"
+} elseif (Test-Path $envSaved) {
+  Copy-Item -Force $envSaved $newEnv
+  Log "ENV restored from saved copy: $envSaved"
+} else {
+  Log "WARN: could not restore .env (no source found)"
+}
+[2026-03-06T23:57:04] ENV restored from previous folder: D:\WINDSURF\DriverAll-main\drivercv-backend__bak_20260306_235659\.env
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>Log "DONE: 26 Feb restore completed successfully."
+[2026-03-06T23:57:04] DONE: 26 Feb restore completed successfully.
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>Log "LOG FILE: $log"
+[2026-03-06T23:57:04] LOG FILE: D:\WINDSURF\DriverAll-main\handoff\\restore_26feb_20260306_235659.log
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-mainPS D:\WINDSURF\DriverAll-main> ]633;B
+PS>cd 'd:\WINDSURF\DriverAll-main\drivercv-backend'
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-main\x5cdrivercv-backendPS D:\WINDSURF\DriverAll-main\drivercv-backend> ]633;B
+PS>npm install
+
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-main\x5cdrivercv-backendPS D:\WINDSURF\DriverAll-main\drivercv-backend> ]633;B
+PS>cd 'd:\WINDSURF\DriverAll-main\drivercv-frontend'
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-main\x5cdrivercv-frontendPS D:\WINDSURF\DriverAll-main\drivercv-frontend> ]633;B
+PS>npm install
+
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-main\x5cdrivercv-frontendPS D:\WINDSURF\DriverAll-main\drivercv-frontend> ]633;B
+PS>cd 'd:\WINDSURF\DriverAll-main\drivercv-backend'
+]633;D;0]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-main\x5cdrivercv-backendPS D:\WINDSURF\DriverAll-main\drivercv-backend> ]633;B
+]633;D]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-main\x5cdrivercv-backendPS D:\WINDSURF\DriverAll-main\drivercv-backend> ]633;B
+PS>$env:PORT=3001; npm run dev
+
+]633;D;1]633;A]633;P;Cwd=D:\x5cWINDSURF\x5cDriverAll-main\x5cdrivercv-backendPS D:\WINDSURF\DriverAll-main\drivercv-backend> ]633;B

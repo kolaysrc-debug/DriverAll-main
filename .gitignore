@@ -1,0 +1,10 @@
+**/.env
+**/.env.*
+**/uploads/runtime/
+handoff/latest.json
+node_modules/
+.next/
+dist/
+build/
+backups/
+.DS_Store

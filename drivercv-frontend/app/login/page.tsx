@@ -17,9 +17,8 @@ export default function LoginPage() {
   useEffect(() => {
     const next = sp?.get("next");
     const qs = new URLSearchParams();
-    qs.set("auth", "login");
     if (next && next.startsWith("/")) qs.set("next", next);
-    router.replace(`/?${qs.toString()}`);
+    router.replace(`/register/auth?${qs.toString()}`);
   }, [router, sp]);
 
   return (

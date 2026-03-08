@@ -1,0 +1,37 @@
+﻿
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : 07 Mart 2026 Cumartesi 11:33:12
+   Source : D:\WINDSURF\_restore\DriverAll-main_2026-02-26_0140\drivercv-backend\
+     Dest : D:\WINDSURF\DriverAll-main\drivercv-backend\
+
+    Files : *.*
+	    
+Exc Files : .env
+	    .env.*
+	    
+ Exc Dirs : node_modules
+	    uploads\runtime
+	    drivercv-backend__bak_20260306_235659
+	    
+  Options : *.* /NDL /L /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /NP /XJ /R:0 /W:0 
+
+------------------------------------------------------------------------------
+
+	    Older     		     109	D:\WINDSURF\_restore\DriverAll-main_2026-02-26_0140\drivercv-backend\.gitignore
+	    Older     		  236691	D:\WINDSURF\_restore\DriverAll-main_2026-02-26_0140\drivercv-backend\package-lock.json
+	    Older     		    5069	D:\WINDSURF\_restore\DriverAll-main_2026-02-26_0140\drivercv-backend\routes\adminPayments.js
+	    Older     		    3136	D:\WINDSURF\_restore\DriverAll-main_2026-02-26_0140\drivercv-backend\services\otp\engine.js
+	  *EXTRA File 		    1708	D:\WINDSURF\DriverAll-main\drivercv-backend\services\otp\providers\devMock.js
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :        14         0        14         0         0         0
+   Files :       153         4       149         0         0         1
+   Bytes :   977.0 k   239.2 k   737.8 k         0         0     1.6 k
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+   Ended : 07 Mart 2026 Cumartesi 11:33:12
+

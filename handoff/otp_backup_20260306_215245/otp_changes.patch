@@ -1,0 +1,58 @@
+# OTP/Proxy fixes backup patch
+# Generated from current workspace diffs
+
+diff --git a/drivercv-backend/server.js b/drivercv-backend/server.js
+index 7616752..a38b0da 100644
+--- a/drivercv-backend/server.js
++++ b/drivercv-backend/server.js
+@@ -36,6 +36,7 @@ function safeRequireAny(paths, label) {
+ // ROUTES
+ // ----------------------------------------------------------
+ const authRoutes = safeRequireAny(["./routes/auth", "./routes/backend-routes-auth"], "auth");
++const authOtpRoutes = safeRequireAny(["./routes/authOtp"], "authOtp");
+ const profileRoutes = safeRequireAny(["./routes/profile", "./routes/backend-routes-profile"], "profile");
+ 
+ const fieldDefRoutes = safeRequireAny(
+@@ -115,10 +116,15 @@ const adminProfileSectionsRoutes = safeRequireAny("./routes/profileSections");
+ const adminProfileFieldsRoutes = safeRequireAny("./routes/profileFields");
+ const adminProfileOverridesRoutes = safeRequireAny("./routes/profileOverrides");
+ 
++// OTP (Admin management)
++const adminOtpConfigRoutes = safeRequireAny("./routes/adminOtpConfig");
++const adminOtpCredentialsRoutes = safeRequireAny("./routes/adminOtpCredentials");
++
+ // ----------------------------------------------------------
+ // ROUTE MOUNT
+ // ----------------------------------------------------------
+ if (authRoutes) app.use("/api/auth", authRoutes);
++if (authOtpRoutes) app.use("/api/auth/otp", authOtpRoutes);
+ if (profileRoutes) app.use("/api/profile", profileRoutes);
+ if (profileSchemaRoutes) app.use("/api/profile", profileSchemaRoutes);
+ if (adminProfileRolesRoutes) app.use("/api/admin/profile-roles", adminProfileRolesRoutes);
+@@ -126,6 +132,9 @@ if (adminProfileSectionsRoutes) app.use("/api/admin/profile-sections", adminProf
+ if (adminProfileFieldsRoutes) app.use("/api/admin/profile-fields", adminProfileFieldsRoutes);
+ if (adminProfileOverridesRoutes) app.use("/api/admin/profile-overrides", adminProfileOverridesRoutes);
+ 
++if (adminOtpConfigRoutes) app.use("/api/admin/otp-config", adminOtpConfigRoutes);
++if (adminOtpCredentialsRoutes) app.use("/api/admin/otp-credentials", adminOtpCredentialsRoutes);
++
+ if (fieldDefRoutes) app.use("/api/admin/fields", fieldDefRoutes);
+ if (adminFieldGroupsRoutes) app.use("/api/admin/field-groups", adminFieldGroupsRoutes);
+
+diff --git a/drivercv-frontend/next.config.ts b/drivercv-frontend/next.config.ts
+index 9a0cdd5..f0db101 100644
+--- a/drivercv-frontend/next.config.ts
++++ b/drivercv-frontend/next.config.ts
+@@ -5,10 +5,14 @@ const nextConfig = {
+       // Frontend'den gelen tüm /api/* çağrılarını backend'e aktar
+       {
+         source: "/api/:path*",
+         destination: "http://127.0.0.1:3001/api/:path*",
+       },
++      {
++        source: "/uploads/:path*",
++        destination: "http://127.0.0.1:3001/uploads/:path*",
++      },
+     ];
+   },
+ };

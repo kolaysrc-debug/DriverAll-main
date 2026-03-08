@@ -8,12 +8,217 @@ const FieldDefinition =
   (FieldDefinitionImport && (FieldDefinitionImport.FieldDefinition || FieldDefinitionImport.default)) ||
   FieldDefinitionImport;
 
+const FieldGroup = require("../models/FieldGroup");
+const DeletedDefaultField = require("../models/DeletedDefaultField");
+
+function slugifyKey(input) {
+  return String(input || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^A-Z0-9_]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
 const {
   expandCoveredKeys,
   validateRequiredKeys,
 } = require("../utils/criteriaLogic");
 
 const router = express.Router();
+
+const DEFAULT_FIELDS = [
+  {
+    key: "EXPERIENCE_YEARS",
+    label: "Deneyim (Yıl)",
+    category: "profile",
+    country: "ALL",
+    fieldType: "number",
+    uiType: "number",
+    required: false,
+    active: true,
+    showInCv: true,
+    showInJobFilter: true,
+    groupLabel: "Genel",
+  },
+  {
+    key: "HAS_PSYCHOTECHNIC",
+    label: "Psikoteknik Belgesi",
+    category: "profile",
+    country: "TR",
+    fieldType: "boolean",
+    uiType: "boolean",
+    required: false,
+    active: true,
+    showInCv: true,
+    showInJobFilter: true,
+    groupKey: "PSYCHO_TR",
+    groupLabel: "Psikoteknik (TR)",
+    hasExpiry: true,
+    requiresIssueDate: true,
+    expiryMode: "durationFromIssue",
+    durationYearsFromIssue: 5,
+  },
+  {
+    key: "LICENCE_B",
+    label: "Ehliyet B",
+    category: "profile",
+    country: "TR",
+    fieldType: "boolean",
+    uiType: "boolean",
+    required: false,
+    active: true,
+    showInCv: true,
+    showInJobFilter: true,
+    groupLabel: "Ehliyet",
+  },
+  {
+    key: "LICENCE_C",
+    label: "Ehliyet C",
+    category: "profile",
+    country: "TR",
+    fieldType: "boolean",
+    uiType: "boolean",
+    required: false,
+    active: true,
+    showInCv: true,
+    showInJobFilter: true,
+    groupLabel: "Ehliyet",
+  },
+  {
+    key: "LICENCE_CE",
+    label: "Ehliyet CE",
+    category: "profile",
+    country: "TR",
+    fieldType: "boolean",
+    uiType: "boolean",
+    required: false,
+    active: true,
+    showInCv: true,
+    showInJobFilter: true,
+    groupLabel: "Ehliyet",
+  },
+  {
+    key: "SRC1_TR",
+    label: "SRC1 (Uluslararası Yolcu)",
+    category: "profile",
+    country: "TR",
+    fieldType: "boolean",
+    uiType: "boolean",
+    required: false,
+    active: true,
+    showInCv: true,
+    showInJobFilter: true,
+    groupLabel: "SRC",
+    coversKeys: ["SRC2_TR"],
+    hasExpiry: true,
+    requiresIssueDate: true,
+    expiryMode: "durationFromIssue",
+    durationYearsFromIssue: 5,
+  },
+  {
+    key: "SRC2_TR",
+    label: "SRC2 (Yurtiçi Yolcu)",
+    category: "profile",
+    country: "TR",
+    fieldType: "boolean",
+    uiType: "boolean",
+    required: false,
+    active: true,
+    showInCv: true,
+    showInJobFilter: true,
+    groupLabel: "SRC",
+    hasExpiry: true,
+    requiresIssueDate: true,
+    expiryMode: "durationFromIssue",
+    durationYearsFromIssue: 5,
+  },
+  {
+    key: "SRC3_TR",
+    label: "SRC3 (Uluslararası Eşya)",
+    category: "profile",
+    country: "TR",
+    fieldType: "boolean",
+    uiType: "boolean",
+    required: false,
+    active: true,
+    showInCv: true,
+    showInJobFilter: true,
+    groupLabel: "SRC",
+    coversKeys: ["SRC4_TR"],
+    hasExpiry: true,
+    requiresIssueDate: true,
+    expiryMode: "durationFromIssue",
+    durationYearsFromIssue: 5,
+  },
+  {
+    key: "SRC4_TR",
+    label: "SRC4 (Yurtiçi Eşya)",
+    category: "profile",
+    country: "TR",
+    fieldType: "boolean",
+    uiType: "boolean",
+    required: false,
+    active: true,
+    showInCv: true,
+    showInJobFilter: true,
+    groupLabel: "SRC",
+    hasExpiry: true,
+    requiresIssueDate: true,
+    expiryMode: "durationFromIssue",
+    durationYearsFromIssue: 5,
+  },
+
+  {
+    key: "SRC5_TR",
+    label: "SRC5 (Tehlikeli Madde)",
+    category: "profile",
+    country: "TR",
+    fieldType: "boolean",
+    uiType: "boolean",
+    required: false,
+    active: true,
+    showInCv: true,
+    showInJobFilter: true,
+    groupLabel: "SRC",
+    hasExpiry: true,
+    requiresIssueDate: true,
+    expiryMode: "durationFromIssue",
+    durationYearsFromIssue: 5,
+  },
+
+  {
+    key: "HAS_MYK",
+    label: "MYK Belgesi",
+    category: "profile",
+    country: "TR",
+    fieldType: "boolean",
+    uiType: "boolean",
+    required: false,
+    active: true,
+    showInCv: true,
+    showInJobFilter: true,
+    groupLabel: "Belgeler",
+    hasExpiry: true,
+    requiresIssueDate: true,
+    expiryMode: "durationFromIssue",
+    durationYearsFromIssue: 5,
+  },
+];
+
+function applyFilterToDefaultFields(filter) {
+  const category = filter?.category;
+  const country = filter?.country;
+  const activeOnly = filter?.activeOnly;
+
+  return DEFAULT_FIELDS.filter((f) => {
+    if (category && f.category !== category) return false;
+    if (country && f.country !== "ALL" && f.country !== country) return false;
+    if (activeOnly && f.active !== true) return false;
+    return true;
+  });
+}
 
 // ----------------------------------------------------------
 // Helpers
@@ -135,15 +340,50 @@ router.get("/", async (req, res) => {
 
     assertModelReady();
 
-    const { category, country, activeOnly } = req.query;
+    const { category, country, activeOnly, groupKey } = req.query;
 
     const filter = {};
     if (category) filter.category = category === "cv" ? "profile" : category;
     if (country) filter.country = normalizeCountry(country, "ALL");
     if (activeOnly === "1" || activeOnly === "true") filter.active = true;
+    if (groupKey) filter.groupKey = String(groupKey || "").trim();
 
     const fields = await FieldDefinition.find(filter).sort({ key: 1 });
-    res.json({ fields });
+    if (!fields || fields.length === 0) {
+      const disableDefaultFields =
+        String(process.env.DISABLE_DEFAULT_FIELDS || "").trim() === "1" ||
+        String(process.env.DISABLE_DEFAULT_FIELDS || "").trim().toLowerCase() === "true";
+      if (disableDefaultFields) {
+        return res.json({ fields: [] });
+      }
+
+      let fallback = applyFilterToDefaultFields({
+        category: filter.category,
+        country: filter.country,
+        activeOnly: !!filter.active,
+      });
+
+      try {
+        const deleted = await DeletedDefaultField.find({})
+          .select({ key: 1 })
+          .lean();
+        const deletedKeys = new Set(
+          (deleted || [])
+            .map((x) => String(x?.key || "").trim())
+            .filter(Boolean)
+        );
+        fallback = (fallback || []).filter((f) => !deletedKeys.has(String(f?.key || "").trim()));
+      } catch {
+        // ignore tombstone errors, fallback still works
+      }
+
+      fallback = (fallback || []).sort((a, b) =>
+        String(a.key).localeCompare(String(b.key))
+      );
+      return res.json({ fields: fallback });
+    }
+
+    return res.json({ fields });
   } catch (err) {
     console.error("GET /api/admin/fields error:", err);
     res.status(500).json({
@@ -233,6 +473,10 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     assertModelReady();
+    const before = await FieldDefinition.findById(req.params.id).lean();
+    if (!before) {
+      return res.status(404).json({ message: "Güncellenecek kriter bulunamadı." });
+    }
     const payload = normalizePayload(req.body);
 
     if (payload.key) {
@@ -253,8 +497,30 @@ router.put("/:id", async (req, res) => {
       { new: true, runValidators: true }
     );
 
-    if (!field) {
-      return res.status(404).json({ message: "Güncellenecek kriter bulunamadı." });
+    const syncCombos = [];
+    const beforeKey = slugifyKey(before?.key);
+    const afterKey = slugifyKey(field?.key);
+    const beforeGroupKey = String(before?.groupKey || "").trim();
+    const afterGroupKey = String(field?.groupKey || "").trim();
+
+    if (beforeKey) syncCombos.push({ groupKey: beforeGroupKey, nodeKey: beforeKey });
+    if (afterKey) syncCombos.push({ groupKey: afterGroupKey, nodeKey: afterKey });
+
+    const unique = new Map();
+    for (const x of syncCombos) {
+      unique.set(`${x.groupKey}::${x.nodeKey}`, x);
+    }
+
+    for (const { groupKey, nodeKey } of unique.values()) {
+      if (!nodeKey) continue;
+      const query = groupKey
+        ? { groupKey, "nodes.key": nodeKey }
+        : { "nodes.key": nodeKey };
+      await FieldGroup.updateMany(
+        query,
+        { $set: { "nodes.$[n].label": field.label } },
+        { arrayFilters: [{ "n.key": nodeKey }] }
+      );
     }
 
     res.json({
@@ -295,6 +561,69 @@ router.delete("/:id", async (req, res) => {
 
     if (!field) {
       return res.status(404).json({ message: "Silinecek kriter bulunamadı." });
+    }
+
+    // Groups cleanup:
+    // - node'u tamamen kaldır
+    // - diğer node'larda parentKey / requiredWith / coverage / equivalentKeys referanslarını temizle
+    try {
+      const rawKey = String(field.key || "").trim();
+      const nodeKey = slugifyKey(rawKey);
+      const targetKeys = Array.from(new Set([rawKey, nodeKey].filter(Boolean)));
+      if (targetKeys.length > 0) {
+        // 1) Node'u pull ile sil (tüm gruplardan)
+        await FieldGroup.updateMany(
+          { "nodes.key": { $in: targetKeys } },
+          { $pull: { nodes: { key: { $in: targetKeys } } } }
+        );
+
+        // 2) Parent'ı silinen node olan çocukları root'a çek (level 0)
+        await FieldGroup.updateMany(
+          { "nodes.parentKey": { $in: targetKeys } },
+          { $set: { "nodes.$[n].parentKey": null, "nodes.$[n].level": 0 } },
+          { arrayFilters: [{ "n.parentKey": { $in: targetKeys } }] }
+        );
+
+        // 3) requiredWith/coverage/equivalentKeys içinde bu key varsa kaldır
+        await FieldGroup.updateMany(
+          { "nodes.requiredWith": { $in: targetKeys } },
+          { $pull: { "nodes.$[n].requiredWith": { $in: targetKeys } } },
+          { arrayFilters: [{ "n.requiredWith": { $in: targetKeys } }] }
+        );
+
+        await FieldGroup.updateMany(
+          { "nodes.coverage": { $in: targetKeys } },
+          { $pull: { "nodes.$[n].coverage": { $in: targetKeys } } },
+          { arrayFilters: [{ "n.coverage": { $in: targetKeys } }] }
+        );
+
+        await FieldGroup.updateMany(
+          { "nodes.equivalentKeys": { $in: targetKeys } },
+          { $pull: { "nodes.$[n].equivalentKeys": { $in: targetKeys } } },
+          { arrayFilters: [{ "n.equivalentKeys": { $in: targetKeys } }] }
+        );
+      }
+    } catch (e) {
+      console.warn("[fields.delete] FieldGroup cleanup failed:", e?.message || e);
+    }
+
+    // Tombstone default fields so they are not reinserted by bootstrap
+    try {
+      const deletedKey = String(field.key || "").trim();
+      if (deletedKey) {
+        const isDefault = DEFAULT_FIELDS.some(
+          (x) => String(x?.key || "").trim() === deletedKey
+        );
+        if (isDefault) {
+          await DeletedDefaultField.updateOne(
+            { key: deletedKey },
+            { $setOnInsert: { key: deletedKey, deletedAt: new Date() } },
+            { upsert: true }
+          );
+        }
+      }
+    } catch (e) {
+      console.warn("[fields.delete] DeletedDefaultField tombstone failed:", e?.message || e);
     }
 
     res.json({
@@ -373,5 +702,8 @@ router.post("/validate-keys", async (req, res) => {
     });
   }
 });
+
+router.DEFAULT_FIELDS = DEFAULT_FIELDS;
+router.applyFilterToDefaultFields = applyFilterToDefaultFields;
 
 module.exports = router;
