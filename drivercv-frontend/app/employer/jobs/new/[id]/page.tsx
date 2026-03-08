@@ -70,6 +70,7 @@ export default function EmployerJobEditPage() {
   const [locationLabel, setLocationLabel] = useState("");
   const [criteriaJson, setCriteriaJson] = useState("{}");
   const [status, setStatus] = useState<string>("draft");
+  const [adminNote, setAdminNote] = useState<string>("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -105,6 +106,7 @@ export default function EmployerJobEditPage() {
           setCityCode(String(j.location?.cityCode || ""));
           setLocationLabel(String(j.location?.label || ""));
           setStatus(String(j.status || "draft"));
+          setAdminNote(String(j.adminNote || ""));
           setCriteriaJson(JSON.stringify(j.criteria || {}, null, 2));
         }
       } catch (e: any) {
@@ -213,6 +215,36 @@ export default function EmployerJobEditPage() {
             {err}
           </div>
         )}
+
+        {!loading && !err && status !== "published" ? (
+          <div
+            className={
+              "text-sm rounded-lg px-3 py-2 border " +
+              (status === "pending"
+                ? "bg-amber-950/30 border-amber-800/60 text-amber-200"
+                : status === "rejected"
+                  ? "bg-rose-950/30 border-rose-800/60 text-rose-200"
+                  : status === "archived"
+                    ? "bg-slate-900/40 border-slate-700 text-slate-200"
+                    : "bg-sky-950/20 border-sky-800/60 text-sky-200")
+            }
+          >
+            {status === "draft" ? (
+              <div>Bu ilan taslak. Henüz yayında değil.</div>
+            ) : status === "pending" ? (
+              <div>Bu ilan admin onayı bekliyor. Onaylanana kadar yayında görünmez.</div>
+            ) : status === "rejected" ? (
+              <div>
+                <div>Bu ilan reddedildi. Düzenleyip tekrar gönderebilirsin.</div>
+                {adminNote ? <div className="mt-1 text-xs opacity-90">Admin notu: {adminNote}</div> : null}
+              </div>
+            ) : status === "archived" ? (
+              <div>Bu ilan arşivli. Yayında değil.</div>
+            ) : (
+              <div>Bu ilan yayında değil. (Durum: {String(status)})</div>
+            )}
+          </div>
+        ) : null}
 
         <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4 space-y-3">
           {loading ? (

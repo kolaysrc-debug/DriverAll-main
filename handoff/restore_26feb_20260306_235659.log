@@ -1,0 +1,18 @@
+[2026-03-06T23:56:59] ROOT=D:\WINDSURF\DriverAll-main
+[2026-03-06T23:56:59] RESTORE=D:\WINDSURF\_restore\DriverAll-main_2026-02-26_0140
+[2026-03-06T23:57:01] Found node.exe processes referencing repo. Stopping them to avoid file locks...
+[2026-03-06T23:57:01] STOP node pid=20764 cmd="node"   "D:\WINDSURF\_restore\DriverAll-main_2026-02-26_0140\drivercv-backend\node_modules\.bin\\..\nodemon\bin\nodemon.js" server.js
+[2026-03-06T23:57:01] STOP node pid=14524 cmd="node"   "D:\WINDSURF\DriverAll-main\drivercv-backend\node_modules\.bin\\..\nodemon\bin\nodemon.js" server.js
+[2026-03-06T23:57:01] STOP node pid=22892 cmd="node"   "D:\WINDSURF\DriverAll-main\drivercv-frontend\node_modules\.bin\\..\next\dist\bin\next" dev
+[2026-03-06T23:57:01] STOP node pid=22168 cmd="C:\Program Files\nodejs\node.exe" D:\WINDSURF\DriverAll-main\drivercv-frontend\node_modules\next\dist\server\lib\start-server.js
+[2026-03-06T23:57:01] STOP node pid=23992 cmd="node" D:\WINDSURF\DriverAll-main\drivercv-frontend\.next\dev\build\postcss.js 48249
+[2026-03-06T23:57:02] Saved backend .env to: D:\WINDSURF\DriverAll-main\handoff\\backend_env_20260306_235659.env
+[2026-03-06T23:57:02] RENAMED frontend -> drivercv-frontend__bak_20260306_235659
+[2026-03-06T23:57:03] RENAMED backend  -> drivercv-backend__bak_20260306_235659
+[2026-03-06T23:57:03] ROBOCOPY frontend /MIR (exclude node_modules,.next)
+[2026-03-06T23:57:03] ROBOCOPY frontend exitcode=1
+[2026-03-06T23:57:03] ROBOCOPY backend /MIR (exclude node_modules, exclude .env)
+[2026-03-06T23:57:04] ROBOCOPY backend exitcode=1
+[2026-03-06T23:57:04] ENV restored from previous folder: D:\WINDSURF\DriverAll-main\drivercv-backend__bak_20260306_235659\.env
+[2026-03-06T23:57:04] DONE: 26 Feb restore completed successfully.
+[2026-03-06T23:57:04] LOG FILE: D:\WINDSURF\DriverAll-main\handoff\\restore_26feb_20260306_235659.log

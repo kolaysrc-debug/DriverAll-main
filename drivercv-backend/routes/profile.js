@@ -8,6 +8,7 @@ const router = express.Router();
 
 const User = require("../models/User");
 const Profile = require("../models/Profile");
+const Role = require("../models/Role");
 const requireAuth = require("../middleware/auth");
 
 /**
@@ -53,6 +54,42 @@ function pickLocation(body, fallbackCountry = "TR") {
   const label = normStr(loc.label || "", "");
 
   return { countryCode, cityCode, districtCode, label };
+}
+
+let _candidateSubRoleCache = {
+  loadedAtMs: 0,
+  keys: /** @type {string[]} */ ([]),
+};
+
+async function getCandidateSubRoleKeys() {
+  const now = Date.now();
+  if (_candidateSubRoleCache.keys.length > 0 && now - _candidateSubRoleCache.loadedAtMs < 60_000) {
+    return _candidateSubRoleCache.keys;
+  }
+
+  const roles = await Role.find({ category: "candidate", level: { $gt: 0 }, isActive: true })
+    .sort({ sortOrder: 1, level: 1, name: 1 })
+    .select({ name: 1 })
+    .lean();
+
+  const keys = (roles || [])
+    .map((r) => String(r?.name || "").trim().toLowerCase())
+    .filter((x) => !!x);
+
+  _candidateSubRoleCache = {
+    loadedAtMs: now,
+    keys: Array.from(new Set(keys)),
+  };
+
+  return _candidateSubRoleCache.keys;
+}
+
+async function normalizeSubRolesDynamic(input) {
+  const arr = Array.isArray(input) ? input : [];
+  const cleaned = arr.map((x) => String(x || "").trim().toLowerCase()).filter((x) => !!x);
+
+  const allowedKeys = new Set(await getCandidateSubRoleKeys());
+  return Array.from(new Set(cleaned.filter((x) => allowedKeys.has(x))));
 }
 
 // ----------------------------------------------------------
@@ -162,6 +199,15 @@ router.put("/me", requireAuth, async (req, res) => {
 
     if (body.about != null) $set.about = normStr(body.about);
 
+    if (body.birthDate !== undefined) {
+      if (!body.birthDate || body.birthDate === "") {
+        $set.birthDate = null;
+      } else {
+        const bd = new Date(body.birthDate);
+        $set.birthDate = Number.isFinite(bd.getTime()) ? bd : null;
+      }
+    }
+
     if (body.experienceYears === null || body.experienceYears === "" || body.experienceYears === undefined) {
       $set.experienceYears = null;
     } else {
@@ -171,6 +217,16 @@ router.put("/me", requireAuth, async (req, res) => {
 
     if (body.dynamicValues != null && typeof body.dynamicValues === "object") {
       $set.dynamicValues = body.dynamicValues;
+    }
+
+    // User modelinde subRoles güncelle
+    if (body.subRoles != null) {
+      try {
+        const normalized = await normalizeSubRolesDynamic(body.subRoles);
+        await User.updateOne({ _id: userId }, { $set: { subRoles: normalized } });
+      } catch {
+        // ignore
+      }
     }
 
     // Default seed (Sadece insert anı için)

@@ -13,7 +13,7 @@ export default function RegisterPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/?auth=register");
+    router.replace("/register/auth");
   }, [router]);
 
   return (

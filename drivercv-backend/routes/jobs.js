@@ -21,7 +21,10 @@ const express = require("express");
 const router = express.Router();
 
 const Job = require("../models/Job");
+const Branch = require("../models/Branch");
 const FieldGroup = require("../models/FieldGroup");
+const FieldDefinition = require("../models/FieldDefinition");
+const DriverApplication = require("../models/DriverApplication");
 const { requireAuth, requireRoles, extractToken } = require("../middleware/auth");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
@@ -36,7 +39,59 @@ router.get("/filters", async (req, res) => {
   try {
     const country = String(req.query.country || "TR").toUpperCase();
 
-    const all = await FieldGroup.find({}).lean();
+    const scopeRaw = String(req.query.scope || "").trim().toLowerCase();
+    const scope = scopeRaw === "profile" || scopeRaw === "job" ? scopeRaw : "";
+
+    // NOTE: We intentionally do NOT constrain FieldDefinitions by category here.
+    // The criteria engine depends on coverage/requiredWith references being resolvable.
+    // If a FieldDefinition's category was mis-set (legacy/admin data), strict category
+    // filtering would drop nodes and break coverage chains (e.g., EHL_D -> EHL_D1).
+    // Scope is still applied at the FieldGroup (domain) level below.
+    const fieldFilter = { active: { $ne: false } };
+
+    const fields = await FieldDefinition.find(fieldFilter)
+      .select({ key: 1, valueType: 1, fieldType: 1, description: 1 })
+      .lean();
+
+    const descriptionByKey = new Map(
+      (fields || [])
+        .map((f) => {
+          const k = String(f?.key || "").trim();
+          const d = String(f?.description || "").trim();
+          return k ? [k, d] : null;
+        })
+        .filter(Boolean)
+    );
+
+    const isBoolField = (f) => {
+      const vt = String(f?.valueType || "").trim().toLowerCase();
+      if (vt) return vt === "boolean";
+      const ft = String(f?.fieldType || "").trim().toLowerCase();
+      return ft === "boolean";
+    };
+
+    // Only boolean criteria keys should become nodes in the criteria engine.
+    // Non-boolean inputs (select/multiselect/text) are not part of the group hierarchy rules.
+    const criteriaKeySet = new Set(
+      (fields || [])
+        .filter(isBoolField)
+        .map((f) => String(f?.key || "").trim())
+        .filter(Boolean)
+    );
+
+    const groupFilter = {};
+    if (scope) {
+      // Legacy data may not have domain set. We still want to return those groups,
+      // but nodes will be constrained by the fieldKeySet (based on category scope).
+      groupFilter.$or = [
+        { domain: scope },
+        { domain: { $exists: false } },
+        { domain: null },
+        { domain: "" },
+      ];
+    }
+
+    const all = await FieldGroup.find(groupFilter).sort({ sortOrder: 1, groupKey: 1 }).lean();
 
     const groups = (all || [])
       .filter((g) => g && g.active !== false)
@@ -50,24 +105,116 @@ router.get("/filters", async (req, res) => {
         groupKey: g.groupKey,
         groupLabel: g.groupLabel,
         country: g.country || "ALL",
+        sortOrder: Number(g.sortOrder || 0),
+        selectionMode: String(g.selectionMode || "multi"),
         active: g.active !== false,
+        defaultValidityYears: g.defaultValidityYears ?? null,
+        defaultMaxAgeLimit: g.defaultMaxAgeLimit ?? null,
         nodes: Array.isArray(g.nodes)
           ? g.nodes
               .filter((n) => n && n.active !== false)
+              .filter((n) => criteriaKeySet.has(String(n?.key || "").trim()))
               .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
               .map((n) => ({
                 key: n.key,
                 label: n.label,
+                description: String(descriptionByKey.get(String(n?.key || "").trim()) || ""),
                 parentKey: n.parentKey || null,
                 level: Number(n.level || 0),
                 sortOrder: Number(n.sortOrder || 0),
+                coverage: Array.isArray(n.coverage) ? n.coverage : [],
+                requiredWith: Array.isArray(n.requiredWith) ? n.requiredWith : [],
+                equivalentKeys: Array.isArray(n.equivalentKeys) ? n.equivalentKeys : [],
+                validityYears: n.validityYears ?? null,
+                maxAgeLimit: n.maxAgeLimit ?? null,
               }))
           : [],
-      }));
+      }))
+      // drop empty groups (prevents leaking groups that are not relevant for criteria engine)
+      .filter((g) => Array.isArray(g.nodes) && g.nodes.length > 0);
 
     return res.json({ success: true, groups });
   } catch (err) {
     return res.status(500).json({ success: false, message: "filters failed", error: err.message });
+  }
+});
+
+// ----------------------------------------------------------
+// Public: job stats (homepage)
+// GET /api/jobs/stats?country=TR
+// - topJobs: most applied-to published jobs (fallback: newest)
+// - topCities: cities with most published jobs
+// ----------------------------------------------------------
+router.get("/stats", async (req, res) => {
+  try {
+    const country = String(req.query.country || "TR").toUpperCase();
+    const limit = Math.max(1, Math.min(10, Number(req.query.limit || 5) || 5));
+
+    const topCitiesAgg = await Job.aggregate([
+      { $match: { status: "published", country, "location.cityCode": { $exists: true, $ne: "" } } },
+      {
+        $group: {
+          _id: "$location.cityCode",
+          count: { $sum: 1 },
+          label: { $first: "$location.label" },
+        },
+      },
+      { $sort: { count: -1 } },
+      { $limit: limit },
+    ]);
+
+    const topJobsAgg = await DriverApplication.aggregate([
+      { $group: { _id: "$job", applyCount: { $sum: 1 } } },
+      { $sort: { applyCount: -1 } },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: "jobs",
+          localField: "_id",
+          foreignField: "_id",
+          as: "job",
+        },
+      },
+      { $unwind: "$job" },
+      { $match: { "job.status": "published", "job.country": country } },
+      {
+        $project: {
+          _id: "$job._id",
+          title: "$job.title",
+          location: "$job.location",
+          applyCount: 1,
+          publishedAt: "$job.publishedAt",
+          createdAt: "$job.createdAt",
+        },
+      },
+    ]);
+
+    let topJobs = topJobsAgg;
+    if (!Array.isArray(topJobs) || topJobs.length === 0) {
+      const fallback = await Job.find({ status: "published", country })
+        .sort({ publishedAt: -1, createdAt: -1 })
+        .limit(limit)
+        .select({ title: 1, location: 1, publishedAt: 1, createdAt: 1 })
+        .lean();
+      topJobs = (fallback || []).map((j) => ({
+        _id: j._id,
+        title: j.title,
+        location: j.location,
+        applyCount: 0,
+        publishedAt: j.publishedAt,
+        createdAt: j.createdAt,
+      }));
+    }
+
+    const topCities = (topCitiesAgg || []).map((x) => ({
+      cityCode: String(x._id || ""),
+      count: Number(x.count || 0),
+      label: String(x.label || "").trim(),
+    }));
+
+    return res.json({ success: true, country, topJobs, topCities });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: "stats failed", error: err.message });
   }
 });
 
@@ -100,8 +247,39 @@ router.post("/", requireAuth, requireRoles("employer", "admin"), async (req, res
 
     const country = String(body.country || "TR").toUpperCase();
 
+    const isAdmin = req.user.role === "admin";
+    const employerUserId = isAdmin && body.employerUserId ? body.employerUserId : req.user._id;
+
+    let branchId = body.branchId || null;
+    let branchSnapshot = undefined;
+    if (branchId) {
+      const branch = await Branch.findById(branchId).lean();
+      if (!branch) return res.status(400).json({ success: false, message: "invalid branchId" });
+
+      const isOwner = String(branch.parentUser) === String(req.user._id);
+      if (!isAdmin && !isOwner) {
+        return res.status(403).json({ success: false, message: "branch does not belong to employer" });
+      }
+
+      if (isAdmin && body.employerUserId && String(branch.parentUser) !== String(body.employerUserId)) {
+        return res.status(400).json({ success: false, message: "branch parentUser mismatch with employerUserId" });
+      }
+
+      branchId = branch._id;
+      branchSnapshot = {
+        _id: branch._id,
+        code: String(branch.code || ""),
+        displayName: String(branch.displayName || branch.name || ""),
+        locationLabel: String(branch?.location?.stateName || "")
+          ? `${String(branch.location.stateName || "")}${branch?.location?.districtName ? " / " + String(branch.location.districtName) : ""}`
+          : "",
+      };
+    }
+
     const job = await Job.create({
-      employerUserId: req.user._id,
+      employerUserId,
+      branchId: branchId || null,
+      branchSnapshot: branchSnapshot,
       country,
       location: body.location || { countryCode: country },
       title,
@@ -129,6 +307,7 @@ router.get("/mine", requireAuth, requireRoles("employer", "admin"), async (req, 
 
     const jobs = await Job.find(query)
   .populate("employerUserId", "name email companyName companyLegalName")
+  .populate("branchId", "code name displayName location")
   .sort({ createdAt: -1 })
   .limit(200)
   .lean();
@@ -146,12 +325,33 @@ router.get("/", async (req, res) => {
   try {
     const country = String(req.query.country || "TR").toUpperCase();
     const cityCode = String(req.query.cityCode || "").trim();
+    const districtCode = String(req.query.districtCode || "").trim();
     const q = String(req.query.q || "").trim();
+    const subRole = String(req.query.subRole || "").trim();
 
     const query = { status: "published", country };
 
-    if (cityCode) query["location.cityCode"] = cityCode;
-    if (q) query.title = { $regex: q, $options: "i" };
+    if (cityCode) {
+      let normCityCode = cityCode;
+      // Bazı location kaynakları TR için "TR-34" gibi kod döndürebilir.
+      // Seed/demo data veya bazı kayıtlar ise "34" şeklinde olabilir.
+      if (country === "TR") {
+        const m = String(cityCode).match(/(\d{2})$/);
+        if (m && m[1]) normCityCode = m[1];
+      }
+
+      const unique = Array.from(new Set([cityCode, normCityCode].map((x) => String(x || "").trim()).filter(Boolean)));
+      query["location.cityCode"] = unique.length > 1 ? { $in: unique } : unique[0];
+    }
+    if (districtCode) query["location.districtCode"] = districtCode;
+
+    const mergedQ = [q, subRole].map((x) => String(x || "").trim()).filter(Boolean).join(" ").trim();
+    if (mergedQ) {
+      query.$or = [
+        { title: { $regex: mergedQ, $options: "i" } },
+        { description: { $regex: mergedQ, $options: "i" } },
+      ];
+    }
 
 // criteriaCsv: "SRC1,ADR_TANK" => criteria.SRC1 var AND false değil  (yani fiilen true)
 // Not: $ne:false tek başına alan yokken de eşleşir; bu yüzden $exists ekliyoruz.
@@ -165,7 +365,8 @@ if (criteriaCsv) {
 
     const jobs = await Job.find(query)
   .populate("employerUserId", "name email companyName companyLegalName")
-  .sort({ createdAt: -1 })
+  .populate("branchId", "code name displayName location")
+  .sort({ placementKey: -1, publishedAt: -1, createdAt: -1 })
   .limit(50)
   .lean();
     return res.json({ success: true, jobs });
@@ -184,6 +385,7 @@ router.get("/:id", async (req, res) => {
 
     const job = await Job.findById(id)
   .populate("employerUserId", "name email companyName companyLegalName")
+  .populate("branchId", "code name displayName location")
   .lean();
 
     if (!job) return res.status(404).json({ success: false, message: "not found" });
@@ -217,7 +419,11 @@ router.get("/:id", async (req, res) => {
     }
 
     // Employer sadece kendi ilanını görebilir
-    if (String(user.role) === "employer" && String(job.employerUserId) === String(user._id)) {
+    const jobOwnerId =
+      job?.employerUserId && typeof job.employerUserId === "object" && job.employerUserId._id
+        ? String(job.employerUserId._id)
+        : String(job?.employerUserId || "");
+    if (String(user.role) === "employer" && jobOwnerId === String(user._id)) {
       return res.json({ success: true, job });
     }
 
@@ -266,6 +472,33 @@ router.put("/:id", requireAuth, requireRoles("employer", "admin"), async (req, r
     if (body.country != null) job.country = String(body.country).toUpperCase();
     if (body.location != null) job.location = body.location;
     if (body.criteria != null) job.criteria = body.criteria;
+
+    if (body.branchId !== undefined) {
+      const nextBranchId = body.branchId || null;
+      if (!nextBranchId) {
+        job.branchId = null;
+        job.branchSnapshot = undefined;
+      } else {
+        const branch = await Branch.findById(nextBranchId).lean();
+        if (!branch) return res.status(400).json({ success: false, message: "invalid branchId" });
+
+        const isAdmin2 = req.user.role === "admin";
+        const isOwner2 = String(branch.parentUser) === String(req.user._id);
+        if (!isAdmin2 && !isOwner2) {
+          return res.status(403).json({ success: false, message: "branch does not belong to employer" });
+        }
+
+        job.branchId = branch._id;
+        job.branchSnapshot = {
+          _id: branch._id,
+          code: String(branch.code || ""),
+          displayName: String(branch.displayName || branch.name || ""),
+          locationLabel: String(branch?.location?.stateName || "")
+            ? `${String(branch.location.stateName || "")}${branch?.location?.districtName ? " / " + String(branch.location.districtName) : ""}`
+            : "",
+        };
+      }
+    }
 
     await job.save();
     return res.json({ success: true, job });

@@ -19,12 +19,33 @@ const advertiserLimitsSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const providerLimitsSchema = new mongoose.Schema(
+  {
+    allowedCountries: { type: [String], default: [] },
+    allowedCityCodes: { type: [String], default: [] },
+    allowedDistrictCodes: { type: [String], default: [] },
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
 
-    passwordHash: { type: String, required: true },
+    phone: { type: String, default: null, trim: true, unique: true, sparse: true },
+
+    cityCode: { type: String, default: "", trim: true },
+    districtCode: { type: String, default: "", trim: true },
+
+    subRoles: { type: [String], default: [] },
+
+    passwordHash: { type: String, required: false },
+
+    // OAuth fields
+    authProvider: { type: String, enum: ["local", "google", "apple", "microsoft", "yandex"], default: "local" },
+    authProviderId: { type: String, default: null },
+    emailVerified: { type: Boolean, default: false },
 
     role: {
       type: String,
@@ -55,6 +76,9 @@ const userSchema = new mongoose.Schema(
     companyAddressLine: { type: String, default: "", trim: true },
 
     advertiserLimits: { type: advertiserLimitsSchema, default: undefined },
+
+    activityAreas: { type: [String], default: [] },
+    providerLimits: { type: providerLimitsSchema, default: undefined },
 
     approvedAt: { type: Date, default: null },
     approvedByUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },

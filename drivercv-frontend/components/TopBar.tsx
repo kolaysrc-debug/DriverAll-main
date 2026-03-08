@@ -14,6 +14,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { loginUser, registerMinimalUser } from "@/lib/api/auth";
 
 type UserLike = {
   _id?: string;
@@ -25,6 +26,200 @@ type UserLike = {
 };
 
 const AUTH_CHANGED_EVENT = "driverall-auth-changed";
+
+function normalizeRoleForRegister(input: any) {
+  const v = String(input || "").trim().toLowerCase();
+  if (v === "employer") return "employer";
+  if (v === "advertiser") return "advertiser";
+  return "driver";
+}
+
+function setSessionFromAuthResponse(data: any) {
+  const token = data?.token ? String(data.token) : "";
+  const user = data?.user && typeof data.user === "object" ? data.user : null;
+  if (!token || !user) throw new Error("Oturum oluşturulamadı.");
+
+  try {
+    window.localStorage.setItem("token", token);
+    window.localStorage.setItem("user", JSON.stringify(user));
+    window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+  } catch {
+    // ignore
+  }
+}
+
+function AuthModal(props: { open: boolean; onClose: () => void }) {
+  const [tab, setTab] = useState<"login" | "register">("login");
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [role, setRole] = useState<"driver" | "employer" | "advertiser">("driver");
+
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!props.open) return;
+    setErr(null);
+  }, [props.open]);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") props.onClose();
+    }
+    if (props.open) window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [props.open, props.onClose]);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    setBusy(true);
+    try {
+      if (tab === "login") {
+        const data = await loginUser({ email: String(email || "").trim(), password: String(password || "") });
+        setSessionFromAuthResponse(data);
+        props.onClose();
+      } else {
+        const data = await registerMinimalUser({
+          name: String(name || "").trim(),
+          email: String(email || "").trim(),
+          phone: String(phone || "").trim(),
+          role: normalizeRoleForRegister(role),
+        });
+        setSessionFromAuthResponse(data);
+        props.onClose();
+      }
+    } catch (e2: any) {
+      setErr(e2?.message || "İşlem başarısız.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!props.open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60]">
+      <button
+        type="button"
+        aria-label="close"
+        onClick={props.onClose}
+        className="absolute inset-0 bg-black/50"
+      />
+      <div className="absolute left-1/2 top-16 w-[min(92vw,420px)] -translate-x-1/2 rounded-2xl border border-slate-800 bg-slate-950 p-5 shadow-2xl">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-sm font-semibold text-slate-100">Giriş / Kayıt</div>
+          <button
+            type="button"
+            onClick={props.onClose}
+            className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1 text-xs text-slate-100 hover:bg-slate-800"
+          >
+            Kapat
+          </button>
+        </div>
+
+        <div className="mt-3 inline-flex rounded-lg border border-slate-800 bg-slate-900/40 p-1 text-xs">
+          <button
+            type="button"
+            onClick={() => setTab("login")}
+            className={
+              "rounded-md px-3 py-1.5 " +
+              (tab === "login" ? "bg-slate-800 text-slate-50" : "text-slate-300 hover:text-slate-100")
+            }
+          >
+            Giriş
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("register")}
+            className={
+              "rounded-md px-3 py-1.5 " +
+              (tab === "register" ? "bg-slate-800 text-slate-50" : "text-slate-300 hover:text-slate-100")
+            }
+          >
+            Kayıt
+          </button>
+        </div>
+
+        {err ? (
+          <div className="mt-3 rounded-lg border border-rose-900/60 bg-rose-950/30 px-3 py-2 text-xs text-rose-200">
+            {err}
+          </div>
+        ) : null}
+
+        <form className="mt-4 space-y-3" onSubmit={onSubmit}>
+          {tab === "register" ? (
+            <>
+              <div>
+                <div className="text-[11px] text-slate-400">Ad Soyad</div>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                />
+              </div>
+
+              <div>
+                <div className="text-[11px] text-slate-400">Telefon</div>
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                />
+              </div>
+
+              <div>
+                <div className="text-[11px] text-slate-400">Rol</div>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(normalizeRoleForRegister(e.target.value) as any)}
+                  className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                >
+                  <option value="driver">Aday</option>
+                  <option value="employer">İşveren</option>
+                  <option value="advertiser">Reklamveren</option>
+                </select>
+              </div>
+            </>
+          ) : null}
+
+          <div>
+            <div className="text-[11px] text-slate-400">E-posta</div>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+            />
+          </div>
+
+          {tab === "login" ? (
+            <div>
+              <div className="text-[11px] text-slate-400">Şifre</div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              />
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-60"
+          >
+            {busy ? "İşleniyor..." : tab === "login" ? "Giriş Yap" : "Kayıt Ol"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 function getStoredUser(): UserLike | null {
   try {
@@ -53,6 +248,7 @@ export default function TopBar() {
   const [user, setUser] = useState<UserLike | null>(null);
   const [hasToken, setHasToken] = useState(false);
   const [open, setOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const loadAuthFromStorage = useCallback(() => {
     setHasToken(hasStoredToken());
@@ -74,6 +270,14 @@ export default function TopBar() {
     return () => window.removeEventListener(AUTH_CHANGED_EVENT, handler);
   }, [loadAuthFromStorage]);
 
+  // Tarayıcı geçmişinde geri/ileri gidildiğinde auth'ı yeniden kontrol et
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = () => loadAuthFromStorage();
+    window.addEventListener("popstate", handler);
+    return () => window.removeEventListener("popstate", handler);
+  }, [loadAuthFromStorage]);
+
   const role = (user?.role || "").toLowerCase();
   const isAdmin = role === "admin";
   const isEmployer = role === "employer" || role === "company";
@@ -86,6 +290,13 @@ export default function TopBar() {
     if (isAdvertiser) return "/advertiser/dashboard";
     return "/driver/dashboard";
   }, [isAdmin, isEmployer, isAdvertiser]);
+
+  const profileHref = useMemo(() => {
+    if (isDriver) return "/cv";
+    if (isEmployer) return "/employer/profile";
+    if (isAdvertiser) return "/advertiser/profile";
+    return null;
+  }, [isDriver, isEmployer, isAdvertiser]);
 
   const displayName = useMemo(() => {
     const name = (user?.name || "").trim();
@@ -184,7 +395,6 @@ export default function TopBar() {
         title: "Ana motorlar",
         links: [
           { href: "/admin/groups", label: "Grup Hiyerarşisi" },
-          { href: "/admin/criteria", label: "Kriter Motoru" },
           { href: "/admin/fields", label: "Fields Motoru" },
           { href: "/admin/profile-roles", label: "Profil Roller" },
           { href: "/admin/profile-sections", label: "Profil Bölümler" },
@@ -197,7 +407,8 @@ export default function TopBar() {
         links: [
           { href: "/admin/job-approvals", label: "İlan Onay" },
           { href: "/admin/job-requests", label: "İlan Talepleri" },
-          { href: "/admin/job-packages", label: "İlan Paketleri" },
+          { href: "/admin/packages", label: "Paketler" },
+          { href: "/admin/orders", label: "Siparişler" },
           { href: "/admin/jobs", label: "İlanlar" },
         ],
       },
@@ -205,7 +416,12 @@ export default function TopBar() {
         title: "Reklam Yönetimi",
         links: [
           { href: "/admin/ad-packages", label: "Reklam Paketleri" },
+          { href: "/admin/ad-campaigns", label: "Reklam Kampanyaları" },
           { href: "/admin/ad-requests", label: "Reklam Talepleri" },
+          { href: "/admin/placements", label: "Ad Placements" },
+          { href: "/admin/geo-groups", label: "Geo Groups" },
+          { href: "/admin/business-policies", label: "Business Policies" },
+          { href: "/admin/company-profiles", label: "Company Profiles" },
         ],
       },
     };
@@ -241,18 +457,29 @@ export default function TopBar() {
             </button>
           ) : !hasToken ? (
             <div className="flex items-center gap-2">
-              <Link
-                href="/login"
-                className="rounded-md border border-slate-700 bg-slate-900 px-3 py-1 text-sm text-slate-100 hover:bg-slate-800"
+              <button
+                type="button"
+                onClick={() => setAuthModalOpen(true)}
+                className="hidden rounded-md border border-slate-700 bg-slate-900 px-3 py-1 text-sm text-slate-100 hover:bg-slate-800 md:inline-flex"
               >
                 Giriş
-              </Link>
-              <Link
-                href="/register"
-                className="rounded-md bg-sky-500/20 px-3 py-1 text-sm font-semibold text-sky-200 hover:bg-sky-500/25"
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthModalOpen(true)}
+                className="hidden rounded-md bg-sky-500/20 px-3 py-1 text-sm font-semibold text-sky-200 hover:bg-sky-500/25 md:inline-flex"
               >
                 Kayıt
-              </Link>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAuthModalOpen(true)}
+                className="inline-flex rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-sm text-slate-100 hover:bg-slate-800 md:hidden"
+              >
+                Giriş
+              </button>
+              <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
             </div>
           ) : (
             <>
@@ -280,13 +507,15 @@ export default function TopBar() {
                     Dashboard
                   </Link>
 
-                  <Link
-                    href="/advertiser/profile"
-                    onClick={handleMenuLinkClick}
-                    className="block rounded-md px-2 py-2 text-sm text-slate-200 hover:bg-slate-900"
-                  >
-                    Profili düzenle
-                  </Link>
+                  {profileHref && !isAdmin && (
+                    <Link
+                      href={profileHref}
+                      onClick={handleMenuLinkClick}
+                      className="block rounded-md px-2 py-2 text-sm text-slate-200 hover:bg-slate-900"
+                    >
+                      Profili düzenle
+                    </Link>
+                  )}
 
                   {/* Employer menü */}
                   {isEmployer && (
@@ -336,7 +565,7 @@ export default function TopBar() {
                       <div className="mt-2 h-px bg-slate-800" />
 
                       {/* Flyout: Ana motorlar */}
-                      <div className="relative group">
+                      <div className="relative group after:content-[''] after:absolute after:top-0 after:left-full after:h-full after:w-2 after:bg-transparent">
                         <div className="mt-2 px-2 pb-1 text-xs font-semibold text-slate-400">Motorlar</div>
 
                         <div className="rounded-md hover:bg-slate-900">
@@ -365,7 +594,7 @@ export default function TopBar() {
                       </div>
 
                       {/* Flyout: İlan Yönetimi */}
-                      <div className="relative group">
+                      <div className="relative group after:content-[''] after:absolute after:top-0 after:left-full after:h-full after:w-2 after:bg-transparent">
                         <div className="rounded-md hover:bg-slate-900">
                           <div className="flex items-center justify-between px-2 py-2 text-sm text-slate-200">
                             <span>{adminFlyouts.jobs.title}</span>
@@ -392,7 +621,7 @@ export default function TopBar() {
                       </div>
 
                       {/* Flyout: Reklam Yönetimi */}
-                      <div className="relative group">
+                      <div className="relative group after:content-[''] after:absolute after:top-0 after:left-full after:h-full after:w-2 after:bg-transparent">
                         <div className="rounded-md hover:bg-slate-900">
                           <div className="flex items-center justify-between px-2 py-2 text-sm text-slate-200">
                             <span>{adminFlyouts.ads.title}</span>
