@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { fetchJobFilters, fetchPublicJobs, fetchLocationsList } from "@/lib/api/publicJobs";
 import { listMyApplications } from "@/lib/api/applications";
+import FilterDrawer from "@/components/FilterDrawer";
 
 type FilterNode = { key: string; label: string };
 type FilterGroup = { groupKey: string; groupLabel: string; nodes: FilterNode[] };
@@ -178,6 +179,22 @@ export default function JobsPage() {
   // NEW: grup sırası + drag state
   const [groupOrder, setGroupOrder] = useState<string[]>([]);
   const [dragGroupKey, setDragGroupKey] = useState<string | null>(null);
+
+  // NEW: Mobil filtre drawer
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+
+  // NEW: Görünüm modu (liste/harita)
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
+
+  // NEW: Hızlı filtre chip'leri
+  const quickFilters = [
+    { key: "SRC", label: "🚛 SRC", emoji: "🚛" },
+    { key: "ADR", label: "⚠️ ADR", emoji: "⚠️" },
+    { key: "TIR", label: "🚚 TIR", emoji: "🚚" },
+    { key: "Kamyon", label: "🚛 Kamyon", emoji: "🚛" },
+    { key: "Forklift", label: "🏗️ Forklift", emoji: "🏗️" },
+    { key: "Kurye", label: "📦 Kurye", emoji: "📦" },
+  ];
 
   const [jobs, setJobs] = useState<PublicJob[]>([]);
   const [meta, setMeta] = useState<JobsMeta>({ total: 0, page: 1, limit: 50 });
@@ -587,6 +604,23 @@ export default function JobsPage() {
     // NOT: grup sırasını silmeyelim (kullanıcının tercihi kalsın)
   }
 
+  // NEW: Hızlı filtre toggle
+  function toggleQuickFilter(filterKey: string) {
+    // İlgili kriteri bul ve toggle et
+    const allNodes = groups.flatMap(g => g.nodes || []);
+    const node = allNodes.find(n => 
+      n.key.toLowerCase().includes(filterKey.toLowerCase()) ||
+      n.label.toLowerCase().includes(filterKey.toLowerCase())
+    );
+    
+    if (node) {
+      toggleKey(node.key);
+    } else {
+      // Bulunamazsa arama yap
+      setQInput(filterKey);
+    }
+  }
+
   // ---------------------------
   // NEW: Grup sırası yönetimi (drag/drop + ↑↓)
   // ---------------------------
@@ -683,21 +717,85 @@ export default function JobsPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="max-w-7xl mx-auto px-4 py-6 md:px-8">
-        <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h1 className="text-xl md:text-2xl font-semibold">İlanlar</h1>
-            <p className="text-sm text-slate-400">Filtrele, ara ve ilan detaylarını görüntüle.</p>
+      <div className="max-w-7xl mx-auto px-3 py-4 md:px-8 md:py-6">
+        <header className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-lg md:text-2xl font-semibold">İş İlanları</h1>
+              <p className="text-xs md:text-sm text-slate-400">Filtrele ve başvur</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Görünüm toggle (liste/harita) */}
+              <div className="hidden sm:flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-900 p-1">
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`rounded px-3 py-1.5 text-xs transition ${
+                    viewMode === "list" ? "bg-emerald-500 text-slate-950 font-semibold" : "text-slate-300 hover:text-white"
+                  }`}
+                >
+                  Liste
+                </button>
+                <button
+                  onClick={() => setViewMode("map")}
+                  className={`rounded px-3 py-1.5 text-xs transition ${
+                    viewMode === "map" ? "bg-emerald-500 text-slate-950 font-semibold" : "text-slate-300 hover:text-white"
+                  }`}
+                >
+                  Harita
+                </button>
+              </div>
+
+              {/* Mobil: Filtre butonu */}
+              <button
+                type="button"
+                onClick={() => setFilterDrawerOpen(true)}
+                className="sm:hidden rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800 flex items-center gap-2"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filtreler
+                {selectedKeysList.length > 0 && (
+                  <span className="rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-slate-950">
+                    {selectedKeysList.length}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={clearAll}
+                className="hidden sm:block rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800"
+              >
+                Sıfırla
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={clearAll}
-              className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm hover:bg-slate-800"
-            >
-              Filtreleri sıfırla
-            </button>
+          {/* Hızlı Filtre Chip'leri */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <span className="text-xs text-slate-500 whitespace-nowrap">Hızlı:</span>
+            {quickFilters.map((qf) => {
+              const isActive = selectedKeysList.some(k => 
+                k.toLowerCase().includes(qf.key.toLowerCase())
+              ) || q.toLowerCase().includes(qf.key.toLowerCase());
+              
+              return (
+                <button
+                  key={qf.key}
+                  onClick={() => toggleQuickFilter(qf.key)}
+                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition ${
+                    isActive
+                      ? "border-emerald-500 bg-emerald-500/20 text-emerald-400"
+                      : "border-slate-700 bg-slate-900 text-slate-300 hover:border-emerald-500/50 hover:text-emerald-400"
+                  }`}
+                >
+                  <span>{qf.emoji}</span>
+                  <span>{qf.key}</span>
+                </button>
+              );
+            })}
           </div>
         </header>
 
@@ -720,18 +818,13 @@ export default function JobsPage() {
           </section>
         )}
 
-        {/* FLEX: solda filtre, sağda sonuçlar */}
-        <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-start">
-          {/* Filters */}
-          <aside
-            className="
-              order-1
-              rounded-xl border border-slate-800 bg-slate-900/40 p-4 space-y-5
-              sm:w-[340px] sm:flex-none
-              sm:sticky sm:top-4 sm:z-20
-              sm:max-h-[calc(100vh-120px)] sm:overflow-auto
-            "
-          >
+        {/* Mobil Filtre Drawer */}
+        <FilterDrawer 
+          isOpen={filterDrawerOpen} 
+          onClose={() => setFilterDrawerOpen(false)}
+          title="Filtreler"
+        >
+          <div className="space-y-5">
             <div>
               <div className="text-xs uppercase tracking-wide text-slate-400">Arama</div>
               <input
@@ -1011,6 +1104,16 @@ export default function JobsPage() {
                 {!orderedGroups.length && <div className="text-sm text-slate-400">Kriter grubu bulunamadı.</div>}
               </div>
             </div>
+          </div>
+        </FilterDrawer>
+
+        {/* FLEX: solda filtre (desktop), sağda sonuçlar */}
+        <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-start">
+          {/* Filters (Desktop Only) - Mobil drawer ile aynı içerik */}
+          <aside className="hidden sm:block order-1 rounded-xl border border-slate-800 bg-slate-900/40 p-4 space-y-5 sm:w-[340px] sm:flex-none sm:sticky sm:top-4 sm:z-20 sm:max-h-[calc(100vh-120px)] sm:overflow-auto">
+            <div className="text-sm text-slate-300">
+              💡 <strong>İpucu:</strong> Mobilde filtreleri açmak için üstteki "Filtreler" butonunu kullanın.
+            </div>
           </aside>
 
           {/* Results */}
@@ -1039,56 +1142,99 @@ export default function JobsPage() {
               )}
             </div>
 
-            <div className="grid gap-3">
-              {jobs.map((j) => {
-                const empObj = typeof j.employerUserId === "object" ? (j.employerUserId as Employer) : undefined;
-                const employerText = empObj
-                  ? `${empObj.name || "(isim yok)"}${empObj.email ? ` · ${empObj.email}` : ""}`
-                  : "-";
+            {/* Liste Görünümü */}
+            {viewMode === "list" && (
+              <div className="grid gap-3">
+                {jobs.map((j) => {
+                  const empObj = typeof j.employerUserId === "object" ? (j.employerUserId as Employer) : undefined;
+                  const employerText = empObj?.name || "Firma";
 
-                const locLabel =
-                  j.location?.label ||
-                  [j.location?.cityCode, j.location?.districtCode].filter(Boolean).join(" / ") ||
-                  "-";
+                  const locLabel =
+                    j.location?.label ||
+                    [j.location?.cityCode, j.location?.districtCode].filter(Boolean).join(" / ") ||
+                    "-";
 
-                return (
-                  <Link
-                    key={j._id}
-                    href={`/jobs/${j._id}`}
-                    className="block rounded-xl border border-slate-800 bg-slate-900/30 hover:bg-slate-900/50 transition px-4 py-3"
-                  >
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <h3 className="text-base font-semibold text-slate-50">{j.title || "(Başlık yok)"}</h3>
-                        <div className="flex items-center gap-2">
-                          {appliedJobIds[j._id] ? (
-                            <span className="text-[11px] px-2 py-0.5 rounded-full border border-emerald-700/60 bg-emerald-950/40 text-emerald-200 whitespace-nowrap">
-                              Başvurdunuz
+                  return (
+                    <Link
+                      key={j._id}
+                      href={`/jobs/${j._id}`}
+                      className="group block rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900/60 to-slate-950/40 hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/10 transition p-5"
+                    >
+                      <div className="flex flex-col gap-3">
+                        {/* Başlık ve Badge */}
+                        <div className="flex items-start justify-between gap-3">
+                          <h3 className="text-base md:text-lg font-bold text-slate-50 group-hover:text-emerald-400 transition line-clamp-2">
+                            {j.title || "İlan Başlığı"}
+                          </h3>
+                          {appliedJobIds[j._id] && (
+                            <span className="flex-shrink-0 text-[10px] px-2.5 py-1 rounded-full border border-emerald-700/60 bg-emerald-950/40 text-emerald-200 whitespace-nowrap">
+                              ✓ Başvurdunuz
                             </span>
-                          ) : null}
-                          <span className="text-[11px] text-slate-400 whitespace-nowrap">
-                            {formatDate(j.publishedAt || j.createdAt)}
-                          </span>
+                          )}
+                        </div>
+
+                        {/* Lokasyon ve Firma */}
+                        <div className="flex flex-wrap items-center gap-3 text-sm">
+                          <div className="flex items-center gap-1.5 text-slate-300">
+                            <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>{locLabel}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-slate-400">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <span>{employerText}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-slate-500 text-xs">
+                            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>{formatDate(j.publishedAt || j.createdAt)}</span>
+                          </div>
+                        </div>
+
+                        {/* Açıklama */}
+                        {j.description && (
+                          <div className="text-sm text-slate-400 line-clamp-2">
+                            {clampText(j.description || "", 200)}
+                          </div>
+                        )}
+
+                        {/* Detayları Gör */}
+                        <div className="flex items-center gap-2 text-sm font-medium text-emerald-400 group-hover:gap-3 transition-all">
+                          <span>Detayları Gör</span>
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
                         </div>
                       </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
 
-                      <div className="text-sm text-slate-300">{locLabel}</div>
-
-                      <div className="text-[11px] text-slate-400">
-                        İlan veren: <span className="text-slate-200">{employerText}</span>
-                      </div>
-
-                      {/* NEW: description preview (clampText) */}
-                      {j.description ? (
-                        <div className="mt-2 text-xs text-slate-300 whitespace-pre-wrap">
-                          {clampText(j.description || "", 360)}
-                        </div>
-                      ) : null}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+            {/* Harita Görünümü */}
+            {viewMode === "map" && (
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 text-center">
+                <div className="mx-auto max-w-md">
+                  <div className="text-6xl mb-4">🗺️</div>
+                  <h3 className="text-lg font-bold text-slate-100 mb-2">Harita Görünümü</h3>
+                  <p className="text-sm text-slate-400 mb-6">
+                    Harita entegrasyonu yakında eklenecek. İlanları harita üzerinde görebilecek ve yakınındaki fırsatları keşfedebileceksiniz.
+                  </p>
+                  <button
+                    onClick={() => setViewMode("list")}
+                    className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition"
+                  >
+                    Liste Görünümüne Dön
+                  </button>
+                </div>
+              </div>
+            )}
 
             {canLoadMore && (
               <div className="pt-2">
