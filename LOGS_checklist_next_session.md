@@ -128,3 +128,109 @@ Invoke-RestMethod -Method POST -Uri "$base/api/auth/otp/verify" -ContentType "ap
 
 - CV UI hides `VISA_TYPES` until `PASSPORT_TYPE_TR` is filled (field meta visibility).
 - If default fields ever “come back”, re-check `DeletedDefaultField` tombstone logic and whether the deletion path is writing tombstones.
+
+---
+
+## 📅 Session Log: 8 Mart 2026
+
+### ✅ Tamamlanan Özellikler
+
+#### 1. OAuth Entegrasyonları
+- **Google OAuth**: Çalışıyor ve test edildi
+- **Yandex OAuth**: Çalışıyor (email yoksa telefon numarasından email oluşturuyor: `905323047271@yandex.temp`)
+- **Apple OAuth**: Altyapı hazır (Apple Developer hesabı gerektiğinde credential eklenecek)
+- **Microsoft OAuth**: Altyapı hazır (şimdilik atlandı)
+
+**Backend Dosyalar:**
+- `drivercv-backend/config/passport.js` - OAuth stratejileri
+- `drivercv-backend/routes/authOAuth.js` - OAuth route'ları
+- `drivercv-backend/OAUTH_SETUP.md` - Kurulum dokümantasyonu
+
+**Frontend Dosyalar:**
+- `drivercv-frontend/app/auth/callback/page.tsx` - OAuth callback handler
+- `drivercv-frontend/app/register/auth/page.tsx` - Social login butonları
+
+**Environment Variables (.env):**
+```
+GOOGLE_CLIENT_ID=1034561161406-gjrjk7thltkqit14p566oamkem8cpp81.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=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
+GOOGLE_CALLBACK_URL=http://localhost:3001/api/auth/google/callback
+
+YANDEX_CLIENT_ID=06cb8f1abccc460cb813631b6580fbe1
+YANDEX_CLIENT_SECRET=4d57ef98c8534835babd20b220c0cd6e
+YANDEX_CALLBACK_URL=http://localhost:3001/api/auth/yandex/callback
+
+FRONTEND_URL=http://localhost:3000
+```
+
+#### 2. Belge Bitiş Tarihi Sistemi
+- Her belge kendi alınış ve bitiş tarihini gösteriyor
+- Grup başlığında ana belgenin bitiş tarihi
+- Bağımlılık kuralları tamamen organik (FieldGroup motorundan)
+
+#### 3. Notification (Uyarı) Sistemi
+- Admin panelinde belge bitişi takip ayarları
+- X gün/ay önce uyarı başlasın
+- Tekrar sıklığı ayarlanabilir
+
+#### 4. Bug Düzeltmeleri
+- **Logout Bug**: Tarayıcı geçmişinde geri/ileri gidildiğinde auth state kontrol ediliyor (`popstate` event listener)
+- **Phone Index**: MongoDB phone field unique index sorunu çözüldü (partial filter expression ile sadece string değerler unique)
+- **User Model**: `passwordHash` optional, OAuth için `authProvider`, `authProviderId`, `emailVerified` eklendi
+
+### 🔧 Teknik Detaylar
+
+**MongoDB Index Düzeltmesi:**
+```javascript
+// Phone index - sadece string değerler unique
+collection.createIndex(
+  { phone: 1 }, 
+  { unique: true, partialFilterExpression: { phone: { $type: "string" } } }
+);
+```
+
+**OAuth Callback Flow:**
+1. User clicks social login button → Backend OAuth route
+2. User authenticates with provider → Provider redirects to backend callback
+3. Backend generates JWT → Redirects to frontend `/auth/callback?token=...&provider=...`
+4. Frontend stores token in localStorage → Redirects to `/profile`
+
+### 📦 Commit Bilgileri
+
+**Commit Message:**
+```
+feat: OAuth integration (Google, Yandex) + Document expiry system + Notification system + Logout bug fix
+
+- Added Google OAuth authentication with Passport.js
+- Added Yandex OAuth authentication (supports phone-based email generation)
+- Apple OAuth infrastructure ready (requires Apple Developer account)
+- Implemented document expiry tracking system with date calculations
+- Added notification system for document expiry alerts in admin panel
+- Fixed logout bug: auth state now updates on browser back/forward navigation
+- Added OAuth callback page for token handling and user redirection
+- Updated User model to support OAuth providers
+- Fixed phone field unique index issue with partial filter expression
+- Social login buttons added to auth page
+```
+
+**Değişen Dosya Sayısı:** 302 dosya
+
+### 🧪 Test Notları
+
+**Google OAuth:**
+- Test kullanıcı: `hgdurmus@gmail.com` - Başarılı
+- Test kullanıcı: `kolaysrc@gmail.com` - Başarılı
+
+**Yandex OAuth:**
+- Test kullanıcı: Yandex hesabı (email yok, telefon kullanıldı) - Başarılı
+- Email yoksa telefon numarasından email oluşturuluyor: `{phone}@yandex.temp`
+
+**Logout:**
+- Çıkış yap → Geri git → Auth state doğru güncelleniyor ✅
+
+### 📝 Sonraki Adımlar
+
+1. **Apple OAuth**: Apple Developer hesabı açılınca credential'lar eklenecek
+2. **Microsoft OAuth**: İhtiyaç olursa kurulum tamamlanacak
+3. **OAuth Test**: Farklı kullanıcılarla daha fazla test
+4. **Production**: OAuth callback URL'lerini production domain'e güncellemek gerekecek
