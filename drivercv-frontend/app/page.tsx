@@ -18,6 +18,7 @@ import { fetchPublicJobs } from "@/lib/api/publicJobs";
 import { fetchLocationsList } from "@/lib/api/publicJobs";
 import AdSlot from "@/components/AdSlot";
 import JobSlider from "@/components/JobSlider";
+import FloatingActionButton from "@/components/FloatingActionButton";
 
 type UserRole = "driver" | "employer" | "advertiser" | "admin";
 
@@ -1345,6 +1346,38 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Floating Action Button - Tek Elle Kullanım */}
+      <FloatingActionButton
+        actions={[
+          {
+            icon: "🔍",
+            label: "İş Ara",
+            href: "/jobs",
+            color: "emerald"
+          },
+          {
+            icon: "📋",
+            label: "CV Oluştur",
+            href: "/cv",
+            color: "sky"
+          },
+          {
+            icon: "💼",
+            label: "İlanlar",
+            href: "/jobs",
+            color: "violet"
+          },
+          {
+            icon: "👤",
+            label: "Profil",
+            href: "/profile",
+            color: "amber"
+          }
+        ]}
+        mainIcon="✚"
+        mainLabel="Hızlı Erişim"
+      />
     </div>
   );
 }
