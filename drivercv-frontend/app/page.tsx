@@ -17,6 +17,7 @@ import { loginMinimalUser, loginUser, registerMinimalUser, registerUser } from "
 import { fetchPublicJobs } from "@/lib/api/publicJobs";
 import { fetchLocationsList } from "@/lib/api/publicJobs";
 import AdSlot from "@/components/AdSlot";
+import JobSlider from "@/components/JobSlider";
 
 type UserRole = "driver" | "employer" | "advertiser" | "admin";
 
@@ -124,6 +125,10 @@ export default function HomePage() {
 
   // Featured jobs preview
   const [featuredJobs, setFeaturedJobs] = useState<any[]>([]);
+  const [tierOneJobs, setTierOneJobs] = useState<any[]>([]);
+  const [tierTwoJobs, setTierTwoJobs] = useState<any[]>([]);
+  const [tierThreeJobs, setTierThreeJobs] = useState<any[]>([]);
+  const [nearbyJobs, setNearbyJobs] = useState<any[]>([]);
   const [featuredErr, setFeaturedErr] = useState<string | null>(null);
 
   const [publicPackages, setPublicPackages] = useState<any[]>([]);
@@ -404,14 +409,34 @@ export default function HomePage() {
     router.replace("/profile");
   }, [router, sessionToken]);
 
-  // Featured jobs (logged-out landing)
+  // Featured jobs (logged-out landing) - Tier bazlı
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        const res = await fetchPublicJobs({ country: "TR", page: "1", limit: "18" });
+        const res = await fetchPublicJobs({ country: "TR", page: "1", limit: "50" });
         if (!alive) return;
-        setFeaturedJobs(Array.isArray((res as any)?.jobs) ? (res as any).jobs : []);
+        const allJobs = Array.isArray((res as any)?.jobs) ? (res as any).jobs : [];
+        setFeaturedJobs(allJobs);
+        
+        // Tier 1: Premium/Spotlight ilanlar (en büyük)
+        const tier1 = allJobs.filter((j: any) => {
+          const pk = String(j?.packageTier || j?.placementKey || "").toUpperCase();
+          return pk.includes("PREMIUM") || pk.includes("SPOTLIGHT") || pk.includes("TIER_1");
+        });
+        setTierOneJobs(tier1.slice(0, 8));
+        
+        // Tier 2: Featured ilanlar (orta)
+        const tier2 = allJobs.filter((j: any) => {
+          const pk = String(j?.packageTier || j?.placementKey || "").toUpperCase();
+          return !tier1.includes(j) && (pk.includes("FEATURED") || pk.includes("TIER_2"));
+        });
+        setTierTwoJobs(tier2.slice(0, 12));
+        
+        // Tier 3: Standart ilanlar (küçük)
+        const tier3 = allJobs.filter((j: any) => !tier1.includes(j) && !tier2.includes(j));
+        setTierThreeJobs(tier3.slice(0, 15));
+        
         setFeaturedErr(null);
       } catch (e: any) {
         if (!alive) return;
@@ -423,6 +448,30 @@ export default function HomePage() {
       alive = false;
     };
   }, []);
+
+  // Yakındaki ilanlar (mobil kullanıcılar için)
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        if (!smartSuggestCityCode) return;
+        const res = await fetchPublicJobs({ 
+          country: "TR", 
+          cityCode: smartSuggestCityCode,
+          page: "1", 
+          limit: "10" 
+        });
+        if (!alive) return;
+        setNearbyJobs(Array.isArray((res as any)?.jobs) ? (res as any).jobs : []);
+      } catch {
+        if (!alive) return;
+        setNearbyJobs([]);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [smartSuggestCityCode]);
 
   function goSearch(q: string, opts?: { cityCode?: string; subRoleKey?: string }) {
     const s = String(q || "").trim();
@@ -714,41 +763,35 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-50">
 
-      {/* ── NAVBAR ── */}
-      <nav className="sticky top-0 z-30 border-b border-slate-800/60 bg-slate-950/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link href="/" className="inline-flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold text-sm">D</div>
-            <div>
-              <div className="text-sm font-bold leading-tight tracking-tight">DriverAll</div>
-              <div className="text-[10px] text-slate-500 leading-tight">Sürücü İşe Alım Platformu</div>
+      {/* ── NAVBAR (Kompakt) ── */}
+      <nav className="sticky top-0 z-30 border-b border-slate-800/60 bg-slate-950/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-2 sm:px-6">
+          <Link href="/" className="inline-flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold text-xs">D</div>
+            <div className="hidden sm:block">
+              <div className="text-xs font-bold leading-tight">DriverAll</div>
+              <div className="text-[9px] text-slate-500 leading-tight">Sürücü İş Platformu</div>
             </div>
           </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/jobs" className="text-sm text-slate-300 hover:text-white transition">İlanlar</Link>
-            <Link href="/packages" className="text-sm text-slate-300 hover:text-white transition">Paketler</Link>
-            <Link href="/register/auth" className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition">Giriş / Kayıt</Link>
+          <div className="flex items-center gap-2">
+            <Link href="/jobs" className="text-xs sm:text-sm text-slate-300 hover:text-white transition">İlanlar</Link>
+            <Link href="/register/auth" className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-emerald-400 transition">Giriş</Link>
           </div>
         </div>
       </nav>
 
-      {/* ── HERO ── */}
+      {/* ── HERO (Kompakt, Görsel) ── */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(16,185,129,0.12),transparent)]" />
-        <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-16 sm:px-6 md:pt-24 md:pb-20">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-medium text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Türkiye&apos;nin Sürücü İşe Alım Platformu
-            </div>
-
-            <h1 className="mt-6 text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-              Doğru sürücüyü bulun,
-              <span className="block bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent">doğru işe ulaşın.</span>
+        <div className="relative mx-auto max-w-7xl px-3 pb-8 pt-8 sm:px-6 sm:pt-12 sm:pb-12">
+          <div className="mx-auto max-w-4xl text-center">
+            <h1 className="text-2xl font-bold leading-tight sm:text-3xl lg:text-4xl">
+              <span className="bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent">Sürücü İşi Bul</span>
+              <span className="block text-slate-100 mt-1">veya Sürücü İşe Al</span>
             </h1>
 
-            <p className="mx-auto mt-5 max-w-xl text-base text-slate-400 sm:text-lg">
-              SRC, ADR, ehliyet ve deneyim kriterlerine göre akıllı eşleşme. Adaylar ve işverenler için tek platform.
+            <p className="mx-auto mt-3 max-w-md text-sm text-slate-400 sm:text-base">
+              🚛 SRC · ADR · TIR · Kamyon · Forklift
             </p>
           </div>
 
@@ -851,8 +894,63 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── İLAN VİTRİNİ (Katmanlı) ── */}
-      <section className="border-t border-slate-800/40">
+      {/* ── YAKIN İLANLAR (Mobil için) ── */}
+      {nearbyJobs.length > 0 && (
+        <section className="border-t border-slate-800/40 bg-emerald-500/5">
+          <div className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
+            <div className="flex items-center gap-2 mb-4">
+              <svg className="h-5 w-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <h2 className="text-lg font-bold text-emerald-400">Yakınındaki İlanlar</h2>
+            </div>
+            <JobSlider jobs={nearbyJobs} size="large" autoPlaySpeed={4000} />
+          </div>
+        </section>
+      )}
+
+      {/* ── TIER 1: PREMIUM İLANLAR (En Büyük Slayt) ── */}
+      {tierOneJobs.length > 0 && (
+        <section className="border-t border-slate-800/40">
+          <div className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">⭐</span>
+              <h2 className="text-lg font-bold text-amber-400">Premium İlanlar</h2>
+            </div>
+            <JobSlider jobs={tierOneJobs} size="large" autoPlaySpeed={5000} />
+          </div>
+        </section>
+      )}
+
+      {/* ── TIER 2: ÖNE ÇIKAN İLANLAR (Orta Slayt) ── */}
+      {tierTwoJobs.length > 0 && (
+        <section className="border-t border-slate-800/40 bg-slate-900/20">
+          <div className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xl">🔥</span>
+              <h2 className="text-base font-bold text-sky-400">Öne Çıkan İlanlar</h2>
+            </div>
+            <JobSlider jobs={tierTwoJobs} size="medium" autoPlaySpeed={4000} />
+          </div>
+        </section>
+      )}
+
+      {/* ── TIER 3: STANDART İLANLAR (Küçük Slayt) ── */}
+      {tierThreeJobs.length > 0 && (
+        <section className="border-t border-slate-800/40">
+          <div className="mx-auto max-w-7xl px-3 py-8 sm:px-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-slate-300">Diğer İlanlar</h2>
+              <Link href="/jobs" className="text-xs text-emerald-400 hover:text-emerald-300">Tümünü gör →</Link>
+            </div>
+            <JobSlider jobs={tierThreeJobs} size="small" autoPlaySpeed={3000} />
+          </div>
+        </section>
+      )}
+
+      {/* ── İLAN VİTRİNİ (Yedek - eski sistem) ── */}
+      <section className="border-t border-slate-800/40 hidden">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-50">İş İlanları</h2>
@@ -970,20 +1068,20 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── İŞ KATEGORİLERİ ── */}
+      {/* ── İŞ KATEGORİLERİ (Görsel Kartlar) ── */}
       <section className="border-t border-slate-800/40 bg-slate-900/20">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-          <h2 className="text-lg font-bold text-slate-50">Kategorilere Göre Ara</h2>
-          <p className="mt-1 text-sm text-slate-400">Sektörüne veya çalışma tipine göre ilanları filtrele</p>
+        <div className="mx-auto max-w-7xl px-3 py-8 sm:px-6 sm:py-12">
+          <h2 className="text-base font-bold text-slate-50 mb-1 sm:text-lg">Kategorilere Göre Ara</h2>
+          <p className="text-xs text-slate-400 sm:text-sm">İş tipine göre filtrele</p>
 
-          <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="mt-4 grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 sm:gap-3 sm:mt-6">
             {[
               { label: "TIR / Kamyon", q: "TIR Kamyon", icon: "🚛" },
               { label: "SRC Belgeli", q: "SRC", icon: "📋" },
               { label: "ADR Belgeli", q: "ADR", icon: "⚠️" },
               { label: "Forklift", q: "Forklift", icon: "🏗️" },
-              { label: "Kurye / Dağıtım", q: "Kurye Dağıtım", icon: "📦" },
-              { label: "Servis Şoförü", q: "Servis", icon: "🚌" },
+              { label: "Kurye", q: "Kurye Dağıtım", icon: "📦" },
+              { label: "Servis", q: "Servis", icon: "🚌" },
               { label: "Lojistik", q: "Lojistik", icon: "🏭" },
               { label: "Uluslararası", q: "Uluslararası", icon: "🌍" },
             ].map((cat) => (
@@ -991,10 +1089,10 @@ export default function HomePage() {
                 key={cat.q}
                 type="button"
                 onClick={() => goSearch(cat.q, { cityCode: homeCityCode, subRoleKey: homeSubRoleKey })}
-                className="group flex items-center gap-3 rounded-xl border border-slate-800/60 bg-slate-900/40 p-4 text-left hover:border-emerald-500/30 hover:bg-slate-900/60 transition"
+                className="group flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-800/60 bg-slate-900/40 p-3 text-center hover:border-emerald-500/30 hover:bg-slate-900/60 transition sm:flex-row sm:gap-3 sm:p-4 sm:text-left"
               >
-                <span className="text-xl">{cat.icon}</span>
-                <span className="text-sm font-medium text-slate-200 group-hover:text-emerald-400 transition">{cat.label}</span>
+                <span className="text-2xl sm:text-xl">{cat.icon}</span>
+                <span className="text-xs font-medium text-slate-200 group-hover:text-emerald-400 transition sm:text-sm">{cat.label}</span>
               </button>
             ))}
           </div>
