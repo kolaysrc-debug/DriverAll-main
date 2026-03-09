@@ -136,6 +136,11 @@ router.get("/me", requireAuth, async (req, res) => {
       profile = { ...profile, role: user.role };
     }
 
+    // User modelindeki subRoles'u profile response'una ekle
+    if (profile) {
+      profile.subRoles = Array.isArray(user.subRoles) ? user.subRoles : [];
+    }
+
     return res.json({ success: true, profile });
   } catch (err) {
     console.error("Profil getirme hatası:", err);
@@ -220,12 +225,16 @@ router.put("/me", requireAuth, async (req, res) => {
     }
 
     // User modelinde subRoles güncelle
+    let savedSubRoles = [];
     if (body.subRoles != null) {
       try {
         const normalized = await normalizeSubRolesDynamic(body.subRoles);
-        await User.updateOne({ _id: userId }, { $set: { subRoles: normalized } });
-      } catch {
-        // ignore
+        console.log("🔧 Updating User.subRoles:", { userId, input: body.subRoles, normalized });
+        const updateResult = await User.updateOne({ _id: userId }, { $set: { subRoles: normalized } });
+        console.log("✅ User.updateOne result:", updateResult);
+        savedSubRoles = normalized;
+      } catch (err) {
+        console.error("❌ User.subRoles update error:", err);
       }
     }
 
@@ -252,11 +261,16 @@ router.put("/me", requireAuth, async (req, res) => {
     // Çakışan alanları defaults'tan temizleyelim
     const $setOnInsert = prepareUpsert($set, defaults);
 
-    const profile = await Profile.findOneAndUpdate(
+    let profile = await Profile.findOneAndUpdate(
       { user: userId },
       { $setOnInsert, $set },
       { new: true, upsert: true }
     ).lean();
+
+    // User modelindeki subRoles'u profile response'una ekle
+    if (profile) {
+      profile.subRoles = savedSubRoles.length > 0 ? savedSubRoles : (user.subRoles || []);
+    }
 
     return res.json({ success: true, profile });
   } catch (err) {
