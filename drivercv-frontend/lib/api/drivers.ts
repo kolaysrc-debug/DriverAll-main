@@ -23,6 +23,7 @@ export type DriverUser = {
   createdAt?: string;
   cvInfo?: DriverCvInfo; // 🔹 CV özeti
 
+  subRoles?: string[]; // Alt roller
   activityAreas?: string[];
   providerLimits?: ProviderLimits;
 };

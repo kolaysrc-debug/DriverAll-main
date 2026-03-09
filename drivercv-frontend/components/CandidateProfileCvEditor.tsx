@@ -1443,44 +1443,31 @@ export default function CandidateProfileCvEditor() {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <div className="text-[10px] text-slate-400">Alt Roller</div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {(candidateSubRoles.length > 0
-                    ? (candidateSubRoles.map((r) => [r.key, r.label, r.description || ""]) as Array<
-                        [string, string, string]
-                      >)
-                    : ([
-                        ["driver", "Driver", ""],
-                        ["courier", "Kurye", ""],
-                        ["forklift", "Forklift", ""],
-                        ["shuttle", "Servis", ""],
-                      ] as Array<[string, string, string]>)
-                  ).map(([k, label, desc]: [string, string, string]) => (
-                    <label
-                      key={String(k)}
-                      className="inline-flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={(selectedSubRoles || []).includes(String(k))}
-                        onChange={(e) => {
-                          const key = String(k);
-                          setSelectedSubRoles((prev) => {
-                            const set = new Set((prev || []).map((x) => String(x)));
-                            if (e.target.checked) set.add(key);
-                            else set.delete(key);
-                            return Array.from(set);
-                          });
-                        }}
-                      />
-                      <span title={String(desc || "")}>{String(label)}</span>
-                    </label>
-                  ))}
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-400">Alt Roller</label>
+                <select
+                  multiple
+                  value={selectedSubRoles}
+                  onChange={(e) => {
+                    const options = Array.from(e.target.selectedOptions);
+                    setSelectedSubRoles(options.map(opt => opt.value));
+                  }}
+                  className="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-sm outline-none focus:border-sky-500 min-h-[120px]"
+                  disabled={subRoleLoading}
+                >
+                  {candidateSubRoles.length > 0 ? (
+                    candidateSubRoles.map((r) => (
+                      <option key={r.key} value={r.key}>
+                        {r.label}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>Roller yükleniyor...</option>
+                  )}
+                </select>
+                <div className="text-[10px] text-slate-500">
+                  Ctrl/Cmd tuşu ile birden fazla seçim yapabilirsiniz
                 </div>
-                {subRoleLoading ? (
-                  <div className="text-[10px] text-slate-500">Roller yükleniyor...</div>
-                ) : null}
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] text-slate-400">Telefon</label>

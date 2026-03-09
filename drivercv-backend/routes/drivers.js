@@ -91,6 +91,7 @@ router.put("/:id", async (req, res) => {
       "isActive",
       "isApproved",
       "notes",
+      "subRoles",
       "activityAreas",
       "providerLimits",
     ];
