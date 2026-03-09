@@ -61,13 +61,20 @@ async function seedCandidateSubRoles() {
       },
     ];
 
-    // Mevcut candidate subRoles'leri sil
-    await Role.deleteMany({ category: "candidate", level: { $gt: 0 } });
-    console.log("🗑️  Mevcut candidate subRoles temizlendi");
-
-    // Yeni subRoles'leri ekle
-    const created = await Role.insertMany(subRoles);
-    console.log(`✅ ${created.length} candidate subRole oluşturuldu`);
+    // Mevcut rolleri kontrol et ve sadece eksik olanları ekle
+    const created = [];
+    for (const subRole of subRoles) {
+      const existing = await Role.findOne({ name: subRole.name });
+      if (!existing) {
+        const newRole = await Role.create(subRole);
+        created.push(newRole);
+        console.log(`✅ Eklendi: ${subRole.icon} ${subRole.displayName} (${subRole.name})`);
+      } else {
+        console.log(`⏭️  Zaten var: ${subRole.displayName} (${subRole.name})`);
+      }
+    }
+    
+    console.log(`\n✅ ${created.length} yeni candidate subRole oluşturuldu`);
 
     // Oluşturulan rolleri listele
     console.log("\n📋 Oluşturulan Candidate SubRoles:");

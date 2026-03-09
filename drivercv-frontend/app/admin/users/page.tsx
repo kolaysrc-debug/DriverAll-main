@@ -33,6 +33,10 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [currentUser, setCurrentUser] = useState<LoggedInUser | null>(null);
+  
+  // SubRoles için state
+  const [availableSubRoles, setAvailableSubRoles] = useState<Array<{key: string, label: string}>>([]);
+  const [subRolesLoading, setSubRolesLoading] = useState(false);
 
   function handleAuthFailure(message: string) {
     try {
@@ -55,6 +59,7 @@ export default function AdminUsersPage() {
   const [editEmail, setEditEmail] = useState("");
   const [editRole, setEditRole] = useState("driver");
   const [editNotes, setEditNotes] = useState("");
+  const [editSubRoles, setEditSubRoles] = useState<string[]>([]);
 
   const [editActivityAreasCsv, setEditActivityAreasCsv] = useState("");
   const [editAllowedCountriesCsv, setEditAllowedCountriesCsv] = useState("");
@@ -78,6 +83,24 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function loadSubRoles() {
+    try {
+      setSubRolesLoading(true);
+      const res = await fetch("/api/public/roles/candidate-subroles");
+      const data = await res.json();
+      if (data.success && Array.isArray(data.roles)) {
+        setAvailableSubRoles(data.roles.map((r: any) => ({
+          key: r.key || r.name,
+          label: r.label || r.displayName || r.name
+        })));
+      }
+    } catch (err) {
+      console.error("SubRoles yükleme hatası:", err);
+    } finally {
+      setSubRolesLoading(false);
+    }
+  }
+
   // Kullanıcı + listeyi yükle
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -93,6 +116,7 @@ export default function AdminUsersPage() {
     }
 
     loadUsers();
+    loadSubRoles();
   }, []);
 
   // ----------------------------------------------------
@@ -180,6 +204,8 @@ export default function AdminUsersPage() {
     setEditEmail(user.email || "");
     setEditRole(user.role || "driver");
     setEditNotes(user.notes || "");
+    const subRoles = Array.isArray((user as any).subRoles) ? ((user as any).subRoles as string[]) : [];
+    setEditSubRoles(subRoles);
 
     const areas = Array.isArray((user as any).activityAreas) ? ((user as any).activityAreas as string[]) : [];
     setEditActivityAreasCsv(areas.join(","));
@@ -220,6 +246,7 @@ export default function AdminUsersPage() {
         email: editEmail.trim(),
         role: editRole,
         notes: editNotes.trim(),
+        subRoles: editSubRoles,
         activityAreas,
         providerLimits,
       });
@@ -425,6 +452,35 @@ export default function AdminUsersPage() {
                   <option value="advertiser">Reklamveren</option>
                   <option value="admin">Admin</option>
                 </select>
+
+                {/* SubRoles multi-select */}
+                <div>
+                  <div className="mb-1 text-xs text-slate-400">
+                    Alt Roller (Ctrl/Cmd ile çoklu seçim)
+                  </div>
+                  <select
+                    multiple
+                    value={editSubRoles}
+                    onChange={(e) => {
+                      const options = Array.from(e.target.selectedOptions);
+                      setEditSubRoles(options.map(opt => opt.value));
+                    }}
+                    className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-1.5 text-sm outline-none min-h-[100px]"
+                    disabled={subRolesLoading || availableSubRoles.length === 0}
+                  >
+                    {availableSubRoles.length > 0 ? (
+                      availableSubRoles.map((r) => (
+                        <option key={r.key} value={r.key}>
+                          {r.label}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>
+                        {subRolesLoading ? "Yükleniyor..." : "Alt rol bulunamadı"}
+                      </option>
+                    )}
+                  </select>
+                </div>
               </div>
 
               {(editRole === "advertiser" || editRole === "employer") && (
