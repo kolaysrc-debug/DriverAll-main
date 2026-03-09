@@ -247,7 +247,11 @@ export default function CandidateProfileCvEditor() {
           .filter((x: CandidateSubRoleItem) => !!x.key);
         setCandidateSubRoles(mapped);
 
-        const initialSelected = Array.isArray(uJson?.user?.subRoles) ? uJson.user.subRoles : [];
+        // Alt rolleri hem user hem profile'dan kontrol et (backend ikisine de kaydediyor)
+        const userSubRoles = Array.isArray(uJson?.user?.subRoles) ? uJson.user.subRoles : [];
+        const profileSubRoles = Array.isArray(pJson?.profile?.subRoles) ? pJson.profile.subRoles : [];
+        console.log("🔍 SubRoles Debug:", { userSubRoles, profileSubRoles, pJson, uJson });
+        const initialSelected = profileSubRoles.length > 0 ? profileSubRoles : userSubRoles;
         setSelectedSubRoles(initialSelected.map((x: any) => String(x || "")).filter(Boolean));
 
         if (pJson.profile) {
@@ -461,6 +465,11 @@ export default function CandidateProfileCvEditor() {
     setProfileInfo(null);
 
     try {
+      // Doğum tarihi validasyonu
+      if (!birthDate || !birthDate.trim()) {
+        throw new Error("Doğum tarihi zorunludur. Belge geçerlilik hesaplamaları için gereklidir.");
+      }
+
       const token = getToken();
       const locLabel = city ? (district ? `${city} / ${district}` : city) : "";
       const locationObj = {
@@ -499,7 +508,19 @@ export default function CandidateProfileCvEditor() {
       const data = await res.json();
       if (!res.ok || data.success === false) throw new Error(data.message || "Kaydedilemedi.");
 
+      console.log("💾 Save Response:", { 
+        sentSubRoles: body.subRoles, 
+        receivedSubRoles: data.profile?.subRoles,
+        fullResponse: data 
+      });
+
       setProfile(data.profile || body);
+      
+      // Backend'den dönen subRoles'u state'e kaydet
+      if (data.profile?.subRoles) {
+        setSelectedSubRoles(data.profile.subRoles.map((x: any) => String(x || "")).filter(Boolean));
+      }
+      
       setProfileInfo("Profil başarıyla güncellendi! ✅");
       setTimeout(() => setProfileInfo(null), 3000);
     } catch (err: any) {
@@ -1405,13 +1426,21 @@ export default function CandidateProfileCvEditor() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-400">Doğum Tarihi</label>
+                <label className="text-[10px] text-slate-400">
+                  Doğum Tarihi <span className="text-red-400">*</span>
+                </label>
                 <input
                   type="date"
+                  required
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-sm outline-none focus:border-sky-500"
                 />
+                {!birthDate && (
+                  <div className="text-[10px] text-amber-400">
+                    ⚠️ Doğum tarihi belge geçerlilik hesaplamaları için gereklidir
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
