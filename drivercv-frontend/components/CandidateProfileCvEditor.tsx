@@ -799,10 +799,10 @@ export default function CandidateProfileCvEditor() {
     const val = (cvValues as any)?.[key];
     if (!val) return null;
 
-    const doc = getCriteriaDocByType(key) || { type: key, issueDate: null, expiryDate: null };
+    // Field tanımında requiresIssueDate=true ise tarih inputlarını göster
+    if (!(field as any)?.requiresIssueDate) return null;
 
-    // Alınış tarihi girilmişse tarih inputlarını göster
-    if (!doc.issueDate) return null;
+    const doc = getCriteriaDocByType(key) || { type: key, issueDate: null, expiryDate: null };
 
     // Geçerlilik süresi: field def, node, veya aday girişi
     const defYears = Number((field as any)?.durationYearsFromIssue || (field as any)?.validityYears || 0);
