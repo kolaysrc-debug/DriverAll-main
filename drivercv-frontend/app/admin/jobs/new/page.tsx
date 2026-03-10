@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { createJob, JobCriteriaInput } from "@/lib/api/jobs";
+import { createJob } from "@/lib/api/jobs";
 import { isAutoAdded, resolveGroupSelection } from "@/lib/groupCriteriaEngine";
 
 // ------------------------------------------------------
@@ -79,6 +79,13 @@ function recomputeGroupCriteria(params: {
 type SelectedCriteria = CriteriaItem & {
   mode: "must" | "nice"; // zorunlu / tercihen
   auto?: boolean;
+};
+
+type JobCriteriaInput = {
+  groupKey: string;
+  fieldKey: string;
+  label: string;
+  mode: "must" | "nice";
 };
 
 type JobDraft = {

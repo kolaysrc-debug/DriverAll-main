@@ -18,6 +18,7 @@ interface Role {
   isSystem: boolean;
   icon: string;
   color: string;
+  sortOrder?: number;
   parentRole?: string;
   childRoles?: Role[];
   criteria: Array<{
@@ -44,6 +45,8 @@ export default function DynamicRolesPage() {
   const [error, setError] = useState<string | null>(null);
   const [expandedRoles, setExpandedRoles] = useState<Set<string>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedMainRoleId, setSelectedMainRoleId] = useState<string | null>(null);
+  const [selectedSubRoleId, setSelectedSubRoleId] = useState<string | null>(null);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -187,6 +190,10 @@ export default function DynamicRolesPage() {
       const data = await response.json();
       if (data.success) {
         setRoles(roles.filter(role => role._id !== roleId));
+        if (selectedSubRoleId === roleId) {
+          setSelectedSubRoleId(null);
+          setEditingRole(null);
+        }
       } else {
         throw new Error(data.message || "Rol silinemedi");
       }
@@ -284,6 +291,11 @@ export default function DynamicRolesPage() {
                 >
                   {role.isActive ? "Aktif" : "Pasif"}
                 </span>
+                {role.level === 0 && (
+                  <span className="px-2 py-1 rounded text-xs font-medium bg-blue-500/20 text-blue-400">
+                    Ana Rol
+                  </span>
+                )}
                 {role.isSystem && (
                   <span className="px-2 py-1 rounded text-xs font-medium bg-orange-500/20 text-orange-400">
                     Sistem
@@ -340,34 +352,35 @@ export default function DynamicRolesPage() {
               </div>
             ) : null}
 
-            <div className="mt-4 flex items-center space-x-2">
-              <button
-                onClick={() => handleEditRole(role)}
-                className="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded text-sm"
-              >
-                Düzenle
-              </button>
-              <button className="px-3 py-1 bg-slate-600 hover:bg-slate-700 text-white rounded text-sm">
-                Kopyala
-              </button>
-              <button
-                onClick={() => handleToggleActive(role)}
-                disabled={role.isSystem}
-                className={`px-3 py-1 rounded text-sm disabled:opacity-60 ${
-                  role.isActive ? "bg-orange-600 hover:bg-orange-700 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white"
-                }`}
-              >
-                {role.isActive ? "Pasif Yap" : "Aktif Yap"}
-              </button>
-              {!role.isSystem && (
+            {role.level === 0 ? (
+              <div className="mt-4 px-3 py-2 bg-blue-500/10 border border-blue-500/30 rounded text-sm text-blue-300">
+                ℹ️ Ana roller sistem tarafından tanımlıdır ve düzenlenemez
+              </div>
+            ) : (
+              <div className="mt-4 flex items-center space-x-2">
+                <button
+                  onClick={() => handleEditRole(role)}
+                  className="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded text-sm"
+                >
+                  Düzenle
+                </button>
+                <button className="px-3 py-1 bg-slate-600 hover:bg-slate-700 text-white rounded text-sm">
+                  Kopyala
+                </button>
+                <button
+                  onClick={() => handleToggleActive(role)}
+                  className="px-3 py-1 rounded text-sm bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  {role.isActive ? "Pasif Yap" : "Aktif Yap"}
+                </button>
                 <button
                   onClick={() => handleDeleteRole(role._id)}
                   className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
                 >
                   Sil
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {hasChildren && expandedRoles.has(role._id) ? (
@@ -379,18 +392,59 @@ export default function DynamicRolesPage() {
   };
 
   const visibleRoles = selectedCategory === "all" ? roles : roles.filter((r) => r.category === selectedCategory);
-  const byId = new Map<string, Role>(visibleRoles.map((r) => [r._id, r]));
-  const childrenByParent = new Map<string, string[]>();
-  visibleRoles.forEach((r) => {
-    const parentId = r.parentRole ? String(r.parentRole) : "";
-    if (!parentId) return;
-    if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
-    childrenByParent.get(parentId)!.push(r._id);
+  
+  // Ana rolleri kategorilere göre grupla
+  const mainRoles = visibleRoles.filter(r => r.level === 0).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  const subRoles = visibleRoles.filter(r => r.level > 0);
+  
+  // Her kategori için alt rolleri grupla
+  const subRolesByCategory = new Map<string, Role[]>();
+  subRoles.forEach(role => {
+    if (!subRolesByCategory.has(role.category)) {
+      subRolesByCategory.set(role.category, []);
+    }
+    subRolesByCategory.get(role.category)!.push(role);
   });
-  const rootIds = visibleRoles
-    .filter((r) => !r.parentRole)
-    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name))
-    .map((r) => r._id);
+
+  useEffect(() => {
+    if (mainRoles.length === 0) {
+      setSelectedMainRoleId(null);
+      setSelectedSubRoleId(null);
+      setEditingRole(null);
+      return;
+    }
+
+    const hasSelectedMain = selectedMainRoleId && mainRoles.some((r) => r._id === selectedMainRoleId);
+    if (!hasSelectedMain) {
+      setSelectedMainRoleId(mainRoles[0]._id);
+    }
+  }, [mainRoles, selectedMainRoleId]);
+
+  const selectedMainRole = mainRoles.find((r) => r._id === selectedMainRoleId) || null;
+  const selectedMainSubRoles = selectedMainRole ? (subRolesByCategory.get(selectedMainRole.category) || []) : [];
+
+  useEffect(() => {
+    if (selectedMainSubRoles.length === 0) {
+      setSelectedSubRoleId(null);
+      setEditingRole(null);
+      return;
+    }
+
+    const hasSelectedSub = selectedSubRoleId && selectedMainSubRoles.some((r) => r._id === selectedSubRoleId);
+    if (!hasSelectedSub) {
+      setSelectedSubRoleId(selectedMainSubRoles[0]._id);
+      setEditingRole({ ...selectedMainSubRoles[0] });
+      return;
+    }
+
+    const current = selectedMainSubRoles.find((r) => r._id === selectedSubRoleId);
+    if (current) {
+      setEditingRole((prev) => {
+        if (!prev || prev._id !== current._id) return { ...current };
+        return prev;
+      });
+    }
+  }, [selectedMainSubRoles, selectedSubRoleId]);
 
   if (loading) {
     return (
@@ -430,12 +484,17 @@ export default function DynamicRolesPage() {
                     onChange={(e) => {
                       setSelectedCategory(e.target.value);
                       setExpandedRoles(new Set()); // Tüm genişletmeleri sıfırla
+                      setSelectedMainRoleId(null);
+                      setSelectedSubRoleId(null);
+                      setEditingRole(null);
                     }}
                     className="px-3 py-1 bg-slate-700 border border-slate-600 rounded text-slate-300 text-sm"
                   >
                     <option value="all">Tümü</option>
                     <option value="candidate">Aday</option>
-                    <option value="business">İşletme</option>
+                    <option value="employer">İşveren / Firma</option>
+                    <option value="advertiser">Reklamveren</option>
+                    <option value="service_provider">Hizmet Veren</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>
@@ -480,125 +539,266 @@ export default function DynamicRolesPage() {
             </div>
           </div>
 
-          <div className="space-y-4">
-            {renderRoleTree(rootIds, byId, childrenByParent)}
+          <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr]">
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setCreateForm((p) => ({
+                    ...p,
+                    category: selectedMainRole?.category || "candidate",
+                    parentRole: "",
+                  }));
+                  setShowCreateModal(true);
+                }}
+                className="w-full rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+              >
+                + Yeni Alt Rol
+              </button>
+
+              <section className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-semibold text-slate-200">Ana Roller</h2>
+                  <span className="text-xs text-slate-400">{mainRoles.length} rol</span>
+                </div>
+
+                <div className="max-h-[calc(100vh-340px)] overflow-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-slate-950/70 sticky top-0">
+                      <tr className="text-xs uppercase tracking-wide text-slate-400">
+                        <th className="px-3 py-2 text-left">Rol</th>
+                        <th className="px-3 py-2 text-right">Alt</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                     {mainRoles.map((role) => (
+                        <tr
+                          key={role._id}
+                          className={`border-t border-slate-800 cursor-pointer hover:bg-slate-900/80 ${selectedMainRoleId === role._id ? "bg-sky-500/15 ring-1 ring-inset ring-sky-500/40" : "bg-slate-900/40"}`}
+                          onClick={() => {
+                            setSelectedMainRoleId(role._id);
+                            setSelectedSubRoleId(null);
+                            setEditingRole(null);
+                          }}
+                        >
+                          <td className={`px-3 py-2 ${selectedMainRoleId === role._id ? "border-l-4 border-sky-400" : "border-l-4 border-transparent"}`}>
+                            <div className="flex items-center gap-2">
+                              <span>{role.icon}</span>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <div className="text-sm text-slate-100">{role.displayName}</div>
+                                  {selectedMainRoleId === role._id ? (
+                                    <span className="rounded bg-sky-500/20 px-2 py-0.5 text-[10px] font-semibold text-sky-300">
+                                      Seçili
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <div className="text-[11px] text-slate-400">{role.name}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-right text-xs text-slate-400">
+                            {(subRolesByCategory.get(role.category) || []).length}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+
+            <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 shadow-sm">
+              <h2 className="mb-3 text-sm font-semibold text-slate-200">Alt Roller</h2>
+
+              {!selectedMainRole ? (
+                <div className="rounded-lg border border-dashed border-slate-700 px-4 py-6 text-center text-sm text-slate-400">
+                  Soldan bir ana rol seç.
+                </div>
+              ) : selectedMainSubRoles.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-slate-700 px-4 py-6 text-center text-sm text-slate-400">
+                  Bu ana role bağlı henüz alt rol yok.
+                </div>
+              ) : (
+                <div className="max-h-[calc(100vh-300px)] overflow-auto">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <div className="text-xs text-slate-400">
+                      {selectedMainRole.displayName} / {selectedMainSubRoles.length} alt rol
+                    </div>
+                  </div>
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-slate-950/70 sticky top-0">
+                      <tr className="text-xs uppercase tracking-wide text-slate-400">
+                        <th className="px-3 py-2 text-left">Key</th>
+                        <th className="px-3 py-2 text-left">Etiket</th>
+                        <th className="px-3 py-2 text-left">Durum</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedMainSubRoles
+                        .slice()
+                        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.displayName.localeCompare(b.displayName, "tr"))
+                        .map((role) => (
+                          <tr
+                            key={role._id}
+                            className={`border-t border-slate-800 cursor-pointer hover:bg-slate-900/80 ${selectedSubRoleId === role._id ? "bg-emerald-500/15 ring-1 ring-inset ring-emerald-500/40" : "bg-slate-900/40"}`}
+                            onClick={() => {
+                              setSelectedSubRoleId(role._id);
+                              setEditingRole({ ...role });
+                            }}
+                          >
+                            <td className={`px-3 py-2 text-xs font-mono text-slate-300 ${selectedSubRoleId === role._id ? "border-l-4 border-emerald-400" : "border-l-4 border-transparent"}`}>{role.name}</td>
+                            <td className="px-3 py-2 text-sm text-slate-100">
+                              <div className="flex items-center gap-2">
+                                <span>{role.displayName}</span>
+                                {selectedSubRoleId === role._id ? (
+                                  <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                                    Seçili
+                                  </span>
+                                ) : null}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 text-xs text-slate-400">{role.isActive ? "Aktif" : "Pasif"}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 shadow-sm">
+              <h2 className="mb-3 text-sm font-semibold text-slate-200">Detay / Düzenleme</h2>
+
+              {!selectedMainRole ? (
+                <div className="rounded-lg border border-dashed border-slate-700 px-4 py-6 text-center text-sm text-slate-400">
+                  Soldan bir ana rol seç.
+                </div>
+              ) : !editingRole ? (
+                <div className="rounded-lg border border-dashed border-slate-700 px-4 py-6 text-center text-sm text-slate-400">
+                  Ortadan bir alt rol seç veya yeni alt rol ekle.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">Rol Adı</label>
+                    <input
+                      type="text"
+                      value={editingRole.name}
+                      readOnly
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">Görünen Ad</label>
+                    <input
+                      type="text"
+                      value={editingRole.displayName}
+                      onChange={(e) => setEditingRole({ ...editingRole, displayName: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">Açıklama</label>
+                    <textarea
+                      value={editingRole.description}
+                      onChange={(e) => setEditingRole({ ...editingRole, description: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-1">Kategori</label>
+                      <input
+                        type="text"
+                        value={editingRole.category}
+                        readOnly
+                        className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-1">Seviye</label>
+                      <input
+                        type="number"
+                        value={editingRole.level}
+                        readOnly
+                        className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-1">İkon</label>
+                      <input
+                        type="text"
+                        value={editingRole.icon}
+                        onChange={(e) => setEditingRole({ ...editingRole, icon: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-1">Renk</label>
+                      <input
+                        type="text"
+                        value={editingRole.color}
+                        onChange={(e) => setEditingRole({ ...editingRole, color: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
+                      />
+                    </div>
+                  </div>
+
+                  <label className="flex items-center gap-2 text-sm text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={editingRole.isActive}
+                      onChange={(e) => setEditingRole({ ...editingRole, isActive: e.target.checked })}
+                    />
+                    Aktif
+                  </label>
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const original = selectedMainSubRoles.find((r) => r._id === editingRole._id);
+                        setEditingRole(original ? { ...original } : null);
+                      }}
+                      className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded"
+                    >
+                      Geri Al
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleActive(editingRole)}
+                      className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded"
+                    >
+                      {editingRole.isActive ? "Pasif Yap" : "Aktif Yap"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteRole(editingRole._id)}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded"
+                    >
+                      Sil
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveRole(editingRole)}
+                      className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded"
+                    >
+                      Kaydet
+                    </button>
+                  </div>
+                </div>
+              )}
+            </section>
           </div>
         </div>
-
-        {/* Düzenleme Modal */}
-        {editingRole && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-slate-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <h2 className="text-xl font-bold text-slate-100 mb-4">Rol Düzenle: {editingRole.displayName}</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Rol Adı</label>
-                  <input
-                    type="text"
-                    value={editingRole.name}
-                    readOnly
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Görünen Ad</label>
-                  <input
-                    type="text"
-                    value={editingRole.displayName}
-                    onChange={(e) => setEditingRole({...editingRole, displayName: e.target.value})}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Açıklama</label>
-                  <textarea
-                    value={editingRole.description}
-                    onChange={(e) => setEditingRole({...editingRole, description: e.target.value})}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
-                    rows={3}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Kategori</label>
-                  <select
-                    value={editingRole.category}
-                    onChange={(e) => setEditingRole({...editingRole, category: e.target.value})}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
-                    disabled={editingRole.isSystem}
-                  >
-                    <option value="candidate">Aday</option>
-                    <option value="business">İşletme</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Seviye</label>
-                  <input
-                    type="number"
-                    value={editingRole.level}
-                    readOnly
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
-                    min="0"
-                    max="10"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">İkon</label>
-                  <input
-                    type="text"
-                    value={editingRole.icon}
-                    onChange={(e) => setEditingRole({...editingRole, icon: e.target.value})}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
-                    placeholder="🎭"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Renk</label>
-                  <input
-                    type="text"
-                    value={editingRole.color}
-                    onChange={(e) => setEditingRole({...editingRole, color: e.target.value})}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
-                    placeholder="#6366f1"
-                  />
-                </div>
-                
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="isActive"
-                    checked={editingRole.isActive}
-                    onChange={(e) => setEditingRole({...editingRole, isActive: e.target.checked})}
-                    className="mr-2"
-                  />
-                  <label htmlFor="isActive" className="text-sm text-slate-300">Aktif</label>
-                </div>
-              </div>
-              
-              <div className="flex justify-end space-x-3 mt-6">
-                <button
-                  onClick={() => setEditingRole(null)}
-                  className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded"
-                >
-                  İptal
-                </button>
-                <button
-                  onClick={() => handleSaveRole(editingRole)}
-                  className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded"
-                >
-                  Kaydet
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Create Modal */}
         {showCreateModal && (
@@ -655,7 +855,9 @@ export default function DynamicRolesPage() {
                       className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
                     >
                       <option value="candidate">Aday</option>
-                      <option value="business">İşletme</option>
+                      <option value="employer">İşveren / Firma</option>
+                      <option value="advertiser">Reklamveren</option>
+                      <option value="service_provider">Hizmet Veren</option>
                       <option value="admin">Admin</option>
                     </select>
                   </div>
@@ -741,6 +943,7 @@ export default function DynamicRolesPage() {
                         displayName: String(createForm.displayName || "").trim(),
                         description: String(createForm.description || "").trim(),
                         category: createForm.category,
+                        level: 1, // Alt roller için level = 1
                         parentRole: createForm.parentRole || null,
                         icon: createForm.icon,
                         color: createForm.color,

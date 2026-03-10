@@ -7,10 +7,10 @@
 // - next paramı korunur
 // ----------------------------------------------------------
 
-import React, { useEffect } from "react";
+import React, { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function LoginRedirectContent() {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -25,5 +25,13 @@ export default function LoginPage() {
     <div className="mx-auto max-w-md px-4 py-10 text-slate-100">
       Yönlendiriliyorsunuz...
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-md px-4 py-10 text-slate-100">Yönlendiriliyorsunuz...</div>}>
+      <LoginRedirectContent />
+    </Suspense>
   );
 }

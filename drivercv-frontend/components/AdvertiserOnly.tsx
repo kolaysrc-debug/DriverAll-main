@@ -12,5 +12,5 @@ import React from "react";
 import RoleGate from "@/components/RoleGate";
 
 export default function AdvertiserOnly({ children }: { children: React.ReactNode }) {
-  return <RoleGate allowedRoles={["advertiser", "employer", "admin"]}>{children}</RoleGate>;
+  return <RoleGate allowRoles={["advertiser", "employer", "admin"]}>{children}</RoleGate>;
 }

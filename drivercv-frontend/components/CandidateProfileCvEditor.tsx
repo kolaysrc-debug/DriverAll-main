@@ -140,9 +140,6 @@ export default function CandidateProfileCvEditor() {
   const [loadingCities, setLoadingCities] = useState(false);
   const [loadingDistricts, setLoadingDistricts] = useState(false);
 
-  const [candidateSubRoles, setCandidateSubRoles] = useState<CandidateSubRoleItem[]>([]);
-  const [subRoleLoading, setSubRoleLoading] = useState(false);
-  const [selectedSubRoles, setSelectedSubRoles] = useState<string[]>([]);
 
   const [cvDoc, setCvDoc] = useState<CvDoc | null>(null);
   const [cvValues, setCvValues] = useState<Record<string, any>>({});
@@ -175,8 +172,6 @@ export default function CandidateProfileCvEditor() {
         if (!token) throw new Error("Oturum bulunamadı.");
         const headers = { Authorization: `Bearer ${token}` };
 
-        setSubRoleLoading(true);
-
         const [
           pRes,
           cvRes,
@@ -185,7 +180,6 @@ export default function CandidateProfileCvEditor() {
           uRes,
           filtersRes,
           groupsRes,
-          subRolesRes,
           dpRes,
         ] = await Promise.all([
           fetch("/api/profile/me", { headers }),
@@ -198,11 +192,6 @@ export default function CandidateProfileCvEditor() {
             cache: "no-store",
           }),
           fetch("/api/admin/field-groups", { headers }),
-          fetch("/api/public/roles/candidate-subroles", {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-            cache: "no-store",
-          }),
           fetch("/api/profile/dynamic", { headers }),
         ]);
 
@@ -213,7 +202,6 @@ export default function CandidateProfileCvEditor() {
         const uJson = await uRes.json().catch(() => ({}));
         const filtersJson = await filtersRes.json().catch(() => ({}));
         const groupsJson = await groupsRes.json().catch(() => ({}));
-        const subJson = await subRolesRes.json().catch(() => ({}));
         const dpJson = await dpRes.json().catch(() => ({}));
 
         const dp: DynamicProfileDoc | null = (dpJson as any)?.profile || null;
@@ -236,23 +224,6 @@ export default function CandidateProfileCvEditor() {
           })
           .filter(Boolean) as any;
         setCriteriaDocs(nextCriteriaDocs);
-
-        const list = Array.isArray(subJson?.subRoles) ? subJson.subRoles : [];
-        const mapped: CandidateSubRoleItem[] = list
-          .map((x: any) => ({
-            key: String(x?.key || "").trim(),
-            label: String(x?.label || x?.key || "").trim(),
-            description: String(x?.description || "").trim() || undefined,
-          }))
-          .filter((x: CandidateSubRoleItem) => !!x.key);
-        setCandidateSubRoles(mapped);
-
-        // Alt rolleri hem user hem profile'dan kontrol et (backend ikisine de kaydediyor)
-        const userSubRoles = Array.isArray(uJson?.user?.subRoles) ? uJson.user.subRoles : [];
-        const profileSubRoles = Array.isArray(pJson?.profile?.subRoles) ? pJson.profile.subRoles : [];
-        console.log("🔍 SubRoles Debug:", { userSubRoles, profileSubRoles, pJson, uJson });
-        const initialSelected = profileSubRoles.length > 0 ? profileSubRoles : userSubRoles;
-        setSelectedSubRoles(initialSelected.map((x: any) => String(x || "")).filter(Boolean));
 
         if (pJson.profile) {
           const p = pJson.profile;
@@ -311,14 +282,16 @@ export default function CandidateProfileCvEditor() {
         setDepNodes(nextDepNodes);
       } catch (err: any) {
         setError(err.message);
-        setCandidateSubRoles([]);
-        setSelectedSubRoles([]);
         setDepNodes([]);
         setOptionGroups([]);
         setCriteriaGroups([]);
         setCriteriaDocs([]);
+        try {
+          setLoading(true);
+        } catch (err: any) {
+          setError(err.message);
+        }
       } finally {
-        setSubRoleLoading(false);
         setLoading(false);
       }
     }
@@ -492,7 +465,6 @@ export default function CandidateProfileCvEditor() {
         cityCode: cityCode || null,
         district: district || null,
         districtCode: districtCode || null,
-        subRoles: selectedSubRoles,
         dynamicValues: {
           ...(profile?.dynamicValues || {}),
           location: locationObj,
@@ -508,18 +480,7 @@ export default function CandidateProfileCvEditor() {
       const data = await res.json();
       if (!res.ok || data.success === false) throw new Error(data.message || "Kaydedilemedi.");
 
-      console.log("💾 Save Response:", { 
-        sentSubRoles: body.subRoles, 
-        receivedSubRoles: data.profile?.subRoles,
-        fullResponse: data 
-      });
-
       setProfile(data.profile || body);
-      
-      // Backend'den dönen subRoles'u state'e kaydet
-      if (data.profile?.subRoles) {
-        setSelectedSubRoles(data.profile.subRoles.map((x: any) => String(x || "")).filter(Boolean));
-      }
       
       setProfileInfo("Profil başarıyla güncellendi! ✅");
       setTimeout(() => setProfileInfo(null), 3000);
@@ -1039,14 +1000,6 @@ export default function CandidateProfileCvEditor() {
       })
       .filter((g) => g.items.length > 0);
 
-    // Seçili alt roller
-    const subRolesText = (selectedSubRoles || [])
-      .map((k) => {
-        const found = (candidateSubRoles || []).find((r) => r.key === k);
-        return found ? found.label : k;
-      })
-      .filter(Boolean)
-      .join(", ");
 
     // Fotoğraf bloğu
     const photoBlock = photoSrc
@@ -1143,7 +1096,6 @@ export default function CandidateProfileCvEditor() {
       ${photoBlock}
       <div class="header-info">
         <h1>${esc(nameText || "-")}</h1>
-        ${subRolesText ? `<div class="subtitle">${esc(subRolesText)}</div>` : ""}
         <div class="contact-row">
           <span>📞 ${esc(phoneText || "-")}</span>
           <span>📍 ${esc(locationText)}</span>
@@ -1443,32 +1395,6 @@ export default function CandidateProfileCvEditor() {
                 )}
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-400">Alt Roller</label>
-                <select
-                  multiple
-                  value={selectedSubRoles}
-                  onChange={(e) => {
-                    const options = Array.from(e.target.selectedOptions);
-                    setSelectedSubRoles(options.map(opt => opt.value));
-                  }}
-                  className="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-sm outline-none focus:border-sky-500 min-h-[120px]"
-                  disabled={subRoleLoading}
-                >
-                  {candidateSubRoles.length > 0 ? (
-                    candidateSubRoles.map((r) => (
-                      <option key={r.key} value={r.key}>
-                        {r.label}
-                      </option>
-                    ))
-                  ) : (
-                    <option disabled>Roller yükleniyor...</option>
-                  )}
-                </select>
-                <div className="text-[10px] text-slate-500">
-                  Ctrl/Cmd tuşu ile birden fazla seçim yapabilirsiniz
-                </div>
-              </div>
               <div className="space-y-1">
                 <label className="text-[10px] text-slate-400">Telefon</label>
                 <input

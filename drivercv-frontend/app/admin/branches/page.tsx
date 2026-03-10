@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 
 interface Branch {
   _id: string;
-  parentUser: {
+  parentUser?: {
     _id: string;
     name: string;
     email: string;
@@ -33,7 +33,7 @@ interface Branch {
     email: string;
     website: string;
   };
-  manager: {
+  manager?: {
     name: string;
     title: string;
     phone: string;
@@ -121,12 +121,18 @@ export default function BranchesPage() {
       (selectedStatus === "pending" && !branch.status.isApproved) ||
       (selectedStatus === "inactive" && !branch.status.isActive);
     
+    const displayName = branch.displayName || "";
+    const name = branch.name || "";
+    const stateName = branch.location?.stateName || "";
+    const districtName = branch.location?.districtName || "";
+    const parentUserName = branch.parentUser?.name || "";
+
     const searchMatch = searchTerm === "" || 
-      branch.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      branch.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      branch.location.stateName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      branch.location.districtName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      branch.parentUser.name.toLowerCase().includes(searchTerm.toLowerCase());
+      displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      stateName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      districtName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      parentUserName.toLowerCase().includes(searchTerm.toLowerCase());
     
     return statusMatch && searchMatch;
   });
@@ -263,30 +269,30 @@ export default function BranchesPage() {
                 <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-slate-400">İşletme:</span>
-                    <div className="text-slate-300">{branch.parentUser.name}</div>
-                    <div className="text-xs text-slate-500">{branch.parentUser.email}</div>
+                    <div className="text-slate-300">{branch.parentUser?.name || "-"}</div>
+                    <div className="text-xs text-slate-500">{branch.parentUser?.email || "-"}</div>
                   </div>
                   <div>
                     <span className="text-slate-400">Lokasyon:</span>
-                    <div className="text-slate-300">{branch.location.stateName} / {branch.location.districtName}</div>
-                    <div className="text-xs text-slate-500">{branch.location.fullAddress}</div>
+                    <div className="text-slate-300">{branch.location?.stateName || "-"} / {branch.location?.districtName || "-"}</div>
+                    <div className="text-xs text-slate-500">{branch.location?.fullAddress || "-"}</div>
                   </div>
                   <div>
                     <span className="text-slate-400">İletişim:</span>
-                    <div className="text-slate-300">{branch.contact.phone}</div>
-                    {branch.contact.email && (
+                    <div className="text-slate-300">{branch.contact?.phone || "-"}</div>
+                    {branch.contact?.email && (
                       <div className="text-xs text-slate-500">{branch.contact.email}</div>
                     )}
                   </div>
                   <div>
                     <span className="text-slate-400">İstatistikler:</span>
                     <div className="text-slate-300">
-                      Alt Kullanıcı: {branch.stats.subUserCount} | 
-                      Çalışan: {branch.stats.employeeCount}
+                      Alt Kullanıcı: {branch.stats?.subUserCount || 0} | 
+                      Çalışan: {branch.stats?.employeeCount || 0}
                     </div>
-                    {branch.manager.name && (
+                    {branch.manager?.name && (
                       <div className="text-xs text-slate-500">
-                        Yönetici: {branch.manager.name} ({branch.manager.title})
+                        Yönetici: {branch.manager.name} ({branch.manager.title || "-"})
                       </div>
                     )}
                   </div>

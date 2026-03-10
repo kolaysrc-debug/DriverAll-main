@@ -323,7 +323,7 @@ export default function TopBar() {
       window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
     } catch {}
     setOpen(false);
-    router.replace("/login");
+    router.replace("/");
   };
 
   // Menü açıkken dışarı tıklanınca kapat
@@ -457,29 +457,25 @@ export default function TopBar() {
             </button>
           ) : !hasToken ? (
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setAuthModalOpen(true)}
+              <Link
+                href="/register/auth"
                 className="hidden rounded-md border border-slate-700 bg-slate-900 px-3 py-1 text-sm text-slate-100 hover:bg-slate-800 md:inline-flex"
               >
                 Giriş
-              </button>
-              <button
-                type="button"
-                onClick={() => setAuthModalOpen(true)}
+              </Link>
+              <Link
+                href="/register/auth"
                 className="hidden rounded-md bg-sky-500/20 px-3 py-1 text-sm font-semibold text-sky-200 hover:bg-sky-500/25 md:inline-flex"
               >
                 Kayıt
-              </button>
+              </Link>
 
-              <button
-                type="button"
-                onClick={() => setAuthModalOpen(true)}
+              <Link
+                href="/register/auth"
                 className="inline-flex rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-sm text-slate-100 hover:bg-slate-800 md:hidden"
               >
                 Giriş
-              </button>
-              <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+              </Link>
             </div>
           ) : (
             <>

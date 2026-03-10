@@ -10,6 +10,7 @@ const express = require("express");
 const router = express.Router();
 const Role = require("../models/Role");
 const requireAuth = require("../middleware/auth");
+const { getMainRoles, isMainRole } = require("../constants/roles");
 
 // Middleware: Admin kontrolü
 const requireAdmin = (req, res, next) => {
@@ -20,25 +21,41 @@ const requireAdmin = (req, res, next) => {
 };
 
 // ----------------------------------------------------------
-// GET /api/admin/dynamic-roles - Tüm roller (düz liste)
+// GET /api/admin/dynamic-roles - Tüm roller (ana + alt)
 // ----------------------------------------------------------
 router.get("/", requireAuth, requireAdmin, async (req, res) => {
   try {
     const { category, isActive } = req.query;
     
-    let filter = {};
+    // Ana rolleri constant'tan al ve _id ekle (frontend için)
+    const mainRoles = getMainRoles().map(role => ({
+      ...role,
+      _id: role.name, // Ana roller için _id = name (unique key için)
+    }));
+    
+    // Alt rolleri veritabanından al (level > 0)
+    let filter = { level: { $gt: 0 } };
     if (category) filter.category = category;
     if (isActive !== undefined) filter.isActive = isActive === "true";
     
-    // Tüm rolleri düz liste olarak getir (hiyerarşi olmadan)
-    const roles = await Role.find(filter)
+    const subRoles = await Role.find(filter)
       .populate('parentRoleData')
       .sort({ sortOrder: 1, level: 1, name: 1 });
     
+    // Ana rolleri + alt rolleri birleştir
+    const allRoles = [...mainRoles, ...subRoles];
+    
+    console.log("📊 Dynamic Roles Response:");
+    console.log("  Main Roles:", mainRoles.map(r => `${r.name} (level:${r.level})`));
+    console.log("  Sub Roles:", subRoles.map(r => `${r.name} (level:${r.level}, parent:${r.parentRole || 'none'})`));
+    console.log("  Total:", allRoles.length);
+    
     return res.json({
       success: true,
-      roles,
-      count: roles.length
+      roles: allRoles,
+      count: allRoles.length,
+      mainRolesCount: mainRoles.length,
+      subRolesCount: subRoles.length
     });
   } catch (err) {
     console.error("Roller getirme hatası:", err);
@@ -138,6 +155,29 @@ router.get("/:id", requireAuth, requireAdmin, async (req, res) => {
 });
 
 // ----------------------------------------------------------
+// DELETE /api/admin/dynamic-roles/cleanup - Tüm alt rolleri temizle (geliştirme için)
+// ----------------------------------------------------------
+router.delete("/cleanup", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const result = await Role.deleteMany({ level: { $gt: 0 } });
+    console.log(`🧹 Cleanup: ${result.deletedCount} alt rol silindi`);
+    
+    return res.json({
+      success: true,
+      message: `${result.deletedCount} alt rol silindi`,
+      deletedCount: result.deletedCount
+    });
+  } catch (err) {
+    console.error("Temizleme hatası:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Temizleme hatası",
+      error: err?.message || String(err)
+    });
+  }
+});
+
+// ----------------------------------------------------------
 // POST /api/admin/dynamic-roles - Yeni rol oluştur
 // ----------------------------------------------------------
 router.post("/", requireAuth, requireAdmin, async (req, res) => {
@@ -148,6 +188,7 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
       description,
       parentRole,
       category,
+      level,
       criteria,
       locationRestrictions,
       permissions,
@@ -156,6 +197,14 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
       color,
       sortOrder
     } = req.body;
+    
+    // Ana rol kontrolü - ana roller eklenemez
+    if (isMainRole(name)) {
+      return res.status(400).json({
+        success: false,
+        message: "Ana roller sistem tarafından tanımlıdır, eklenemez"
+      });
+    }
     
     // Validasyon
     if (!name || !name.trim()) {
@@ -180,13 +229,22 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
     }
     
     // Parent rol kontrolü
-    if (parentRole) {
-      const parent = await Role.findById(parentRole);
-      if (!parent) {
-        return res.status(400).json({
-          success: false,
-          message: "Ana rol bulunamadı"
-        });
+    // Ana roller constant'tan geldiği için ObjectId değil string olabilir, bu durumda parentRole null yapıyoruz
+    let validParentRole = null;
+    if (parentRole && parentRole.trim() !== "") {
+      // ObjectId formatında mı kontrol et (24 hex karakter)
+      if (/^[0-9a-fA-F]{24}$/.test(parentRole)) {
+        const parent = await Role.findById(parentRole);
+        if (!parent) {
+          return res.status(400).json({
+            success: false,
+            message: "Parent rol bulunamadı"
+          });
+        }
+        validParentRole = parentRole;
+      } else {
+        // ObjectId değilse (örn: "candidate"), parentRole'u null yap
+        validParentRole = null;
       }
     }
     
@@ -203,8 +261,9 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
       name: name.trim(),
       displayName: displayName.trim(),
       description: description?.trim() || "",
-      parentRole: parentRole || null,
+      parentRole: validParentRole,
       category,
+      level: level || 1, // Alt roller için default 1
       criteria: criteria || [],
       locationRestrictions: locationRestrictions || {
         type: "none",
@@ -266,6 +325,14 @@ router.put("/:id", requireAuth, requireAdmin, async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Rol bulunamadı"
+      });
+    }
+    
+    // Ana rol kontrolü - ana roller düzenlenemez
+    if (isMainRole(role.name)) {
+      return res.status(403).json({
+        success: false,
+        message: "Ana roller düzenlenemez"
       });
     }
     
@@ -350,6 +417,14 @@ router.delete("/:id", requireAuth, requireAdmin, async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Rol bulunamadı"
+      });
+    }
+    
+    // Ana rol kontrolü - ana roller silinemez
+    if (isMainRole(role.name)) {
+      return res.status(403).json({
+        success: false,
+        message: "Ana roller silinemez"
       });
     }
     

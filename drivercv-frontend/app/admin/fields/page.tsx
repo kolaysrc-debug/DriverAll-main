@@ -1,7 +1,7 @@
 // DriverAll-main/drivercv-frontend/app/admin/fields/page.tsx
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import AdminOnly from "@/components/AdminOnly";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -1077,7 +1077,9 @@ function AdminFieldsInner() {
 export default function AdminFieldsPage() {
   return (
     <AdminOnly>
-      <AdminFieldsInner />
+      <Suspense fallback={<div className="p-6 text-slate-200">Yükleniyor...</div>}>
+        <AdminFieldsInner />
+      </Suspense>
     </AdminOnly>
   );
 }

@@ -456,6 +456,59 @@ router.post("/:id/owner-reject", requireAuth, requireAdminOrOwner, async (req, r
 });
 
 // ----------------------------------------------------------
+// POST /api/admin/subusers/:id/toggle-active - Aktif/Pasif yap
+// ----------------------------------------------------------
+router.post("/:id/toggle-active", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body || {};
+
+    const subuser = await SubUser.findById(id);
+    if (!subuser) {
+      return res.status(404).json({
+        success: false,
+        message: "Alt kullanıcı bulunamadı"
+      });
+    }
+
+    if (!subuser.status.isApproved) {
+      return res.status(400).json({
+        success: false,
+        message: "Onaylanmamış kullanıcı aktif/pasif yapılamaz"
+      });
+    }
+
+    if (subuser.status.isActive) {
+      subuser.deactivate(req.user._id, reason || "");
+    } else {
+      subuser.activate(req.user._id);
+    }
+
+    subuser.metadata.updatedBy = req.user._id;
+    await subuser.save();
+
+    await subuser.populate([
+      { path: "parentUser" },
+      { path: "role" },
+      { path: "assignedBranches.branch" }
+    ]);
+
+    return res.json({
+      success: true,
+      message: subuser.status.isActive ? "Alt kullanıcı aktif edildi" : "Alt kullanıcı pasif yapıldı",
+      subuser
+    });
+  } catch (err) {
+    console.error("Alt kullanıcı aktif/pasif hatası:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Aktif/pasif işlemi yapılamadı",
+      error: err?.message || String(err)
+    });
+  }
+});
+
+// ----------------------------------------------------------
 // DELETE /api/admin/subusers/:id - Alt kullanıcı sil
 // ----------------------------------------------------------
 router.delete("/:id", requireAuth, requireAdmin, async (req, res) => {
