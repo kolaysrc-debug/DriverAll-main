@@ -19,7 +19,7 @@ export default function CleanHierarchyPage() {
   const loadData = async () => {
     try {
       const data = await listFieldGroups();
-      const fetchedGroups = Array.isArray(data) ? data : (data.groups || []);
+      const fetchedGroups = Array.isArray(data) ? data : [];
       setGroups(fetchedGroups);
       
       const flatNodes = fetchedGroups.flatMap((g: any) => 
@@ -46,15 +46,14 @@ export default function CleanHierarchyPage() {
     try {
       if (editingItem.type === 'node') {
         await updateFieldGroupNode(editingItem.data.groupId, editingItem.data.key, {
-          validityYears: editingItem.data.dbV === "" ? null : Number(editingItem.data.dbV),
-          maxAgeLimit: editingItem.data.dbA === "" ? null : Number(editingItem.data.dbA),
           coverage: editingItem.data.dbCoverage,
+          requiredWith: editingItem.data.dbRequiredWith,
         });
       } else {
         await updateFieldGroup(editingItem.data._id, {
           groupLabel: editingItem.data.groupLabel,
-          defaultValidityYears: Number(editingItem.data.defaultValidityYears),
-          defaultMaxAgeLimit: Number(editingItem.data.defaultMaxAgeLimit),
+          durationYearsFromIssue: editingItem.data.defaultValidityYears === "" ? null : Number(editingItem.data.defaultValidityYears),
+          maxAge: editingItem.data.defaultMaxAgeLimit === "" ? null : Number(editingItem.data.defaultMaxAgeLimit),
         });
       }
       alert("Başarıyla kaydedildi.");

@@ -108,6 +108,9 @@ export default function AdminDashboardPage() {
               <div className="mt-4">
                 <div className="text-xs font-semibold text-slate-400 px-2 py-2">Kurallar / Motor</div>
                 <div className="space-y-1">
+                  <Link href="/admin/tasks" className={linkCls("/admin/tasks")}>
+                    Talimat / Yapılacak Takibi
+                  </Link>
                   <Link href="/admin/business-policies" className={linkCls("/admin/business-policies")}>
                     Business Policies
                   </Link>

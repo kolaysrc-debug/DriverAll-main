@@ -431,6 +431,26 @@ export default function AdminHomePage() {
                 </Link>
               </div>
             </div>
+
+            <div className="mt-6 rounded-xl border border-slate-700 bg-slate-800/40 p-4">
+              <h3 className="font-semibold text-slate-100 mb-2">Eski Dosyalar / Referanslar</h3>
+              <p className="text-sm text-slate-400 mb-3">Durum takibi, handoff ve önceki notlar için referans dosyaları.</p>
+              <div className="space-y-2">
+                <div className="text-xs text-slate-300">- `STATUS_OVERVIEW.md`</div>
+                <div className="text-xs text-slate-300">- `TODO.md`</div>
+                <div className="text-xs text-slate-300">- `PROJECT_TODO.md`</div>
+                <div className="text-xs text-slate-300">- `REMINDER_next_session.md`</div>
+                <div className="text-xs text-slate-300">- `LOGS_checklist_next_session.md`</div>
+                <div className="text-xs text-slate-300">- `handoff/latest.md`</div>
+              </div>
+
+              <div className="mt-4 border-t border-slate-700 pt-4">
+                <Link href="/admin/tasks" className="block text-sm font-medium text-sky-400 hover:text-sky-300">
+                  → Talimat / Yapılacak Takibi ekranına git
+                </Link>
+                <div className="mt-1 text-xs text-slate-500">Konuşulan görevleri buradan kaydedip takip edebilirsin.</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

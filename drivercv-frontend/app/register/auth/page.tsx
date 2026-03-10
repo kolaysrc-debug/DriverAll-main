@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { loginUser, registerUser, requestOtp, verifyOtp } from "@/lib/api/auth";
 import { setSession } from "@/lib/session";
 
-const AuthPage: React.FC = () => {
+const AuthPageContent: React.FC = () => {
   const router = useRouter();
   const sp = useSearchParams();
   const next = (sp?.get("next") || "").trim();
@@ -15,7 +15,7 @@ const AuthPage: React.FC = () => {
       router.push(next);
       return;
     }
-    router.push("/cv");
+    router.push("/dashboard");
   };
 
   // Sekme: email mi, telefon mu?
@@ -171,32 +171,6 @@ const AuthPage: React.FC = () => {
           telefon ile devam et.
         </p>
 
-        {/* Sosyal butonlar */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6 text-xs">
-          <button
-            type="button"
-            onClick={handleGoogle}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 bg-slate-950/40 py-2 hover:bg-slate-900 transition"
-          >
-            Google ile devam et
-          </button>
-          <button
-            type="button"
-            onClick={handleApple}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 bg-slate-950/40 py-2 hover:bg-slate-900 transition"
-          >
-            Apple ile devam et
-          </button>
-        </div>
-
-        <div className="flex items-center gap-3 mb-4">
-          <span className="h-px flex-1 bg-slate-700" />
-          <span className="text-[10px] uppercase tracking-wide text-slate-400">
-            veya
-          </span>
-          <span className="h-px flex-1 bg-slate-700" />
-        </div>
-
         {/* Sekmeler: Email / Telefon */}
         <div className="flex mb-4 text-xs border-b border-slate-700">
           <button
@@ -286,12 +260,12 @@ const AuthPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-2">
+              <div className="mt-4 grid grid-cols-3 gap-3">
                 <a
                   href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/auth/google`}
-                  className="flex items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-750 px-3 py-2 text-xs font-medium text-slate-200 transition"
+                  className="flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-4 py-3.5 text-sm font-medium text-slate-200 transition"
                 >
-                  <svg className="h-4 w-4" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -301,36 +275,23 @@ const AuthPage: React.FC = () => {
                 </a>
 
                 <a
-                  href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/auth/apple`}
-                  className="flex items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-750 px-3 py-2 text-xs font-medium text-slate-200 transition"
-                >
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-                  </svg>
-                  Apple
-                </a>
-
-                <a
-                  href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/auth/microsoft`}
-                  className="flex items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-750 px-3 py-2 text-xs font-medium text-slate-200 transition"
-                >
-                  <svg className="h-4 w-4" viewBox="0 0 24 24">
-                    <path fill="#F25022" d="M1 1h10v10H1z"/>
-                    <path fill="#00A4EF" d="M13 1h10v10H13z"/>
-                    <path fill="#7FBA00" d="M1 13h10v10H1z"/>
-                    <path fill="#FFB900" d="M13 13h10v10H13z"/>
-                  </svg>
-                  Microsoft
-                </a>
-
-                <a
                   href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/auth/yandex`}
-                  className="flex items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-750 px-3 py-2 text-xs font-medium text-slate-200 transition"
+                  className="flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-4 py-3.5 text-sm font-medium text-slate-200 transition"
                 >
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="#FC3F1D">
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="#FC3F1D">
                     <path d="M13.04 2h-2.08C7.65 2 5.5 4.15 5.5 7.46v3.08h-2v3.69h2V22h3.69v-7.77h2.46l.38-3.69h-2.84V7.69c0-.77.15-1.08.92-1.08h1.92V2z"/>
                   </svg>
                   Yandex
+                </a>
+
+                <a
+                  href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/auth/apple`}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-4 py-3.5 text-sm font-medium text-slate-200 transition"
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                  </svg>
+                  Apple
                 </a>
               </div>
             </div>
@@ -397,6 +358,14 @@ const AuthPage: React.FC = () => {
         </p>
       </div>
     </div>
+  );
+};
+
+const AuthPage: React.FC = () => {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-50 flex items-center justify-center px-4">Yükleniyor...</div>}>
+      <AuthPageContent />
+    </Suspense>
   );
 };
 

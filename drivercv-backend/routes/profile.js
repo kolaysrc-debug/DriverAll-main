@@ -106,7 +106,7 @@ router.get("/me", requireAuth, async (req, res) => {
     const $set = {}; // GET'te update yapmıyoruz
     const defaults = {
       user: userId,
-      role: user.role || "driver",
+      role: user.role || "candidate",
       fullName: user.name || "",
       phone: user.phone || "",
       country: user.country || "TR",
@@ -164,13 +164,13 @@ router.put("/me", requireAuth, async (req, res) => {
     if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı." });
 
     const body = req.body || {};
-    const incomingRole = normStr(body.role || user.role || "driver", "driver");
+    const incomingRole = normStr(body.role || user.role || "candidate", "candidate");
     const incomingCountry = normalizeCountryCode(body.country || user.country || "TR", "TR");
     const location = pickLocation(body, incomingCountry);
 
     // TR validasyonları
     if (incomingCountry === "TR") {
-      if (incomingRole === "driver") {
+      if (incomingRole === "candidate") {
         if (!location.cityCode) return res.status(400).json({ success: false, message: "İl zorunludur." });
         if (!location.districtCode) return res.status(400).json({ success: false, message: "İlçe zorunludur." });
       }
@@ -224,24 +224,10 @@ router.put("/me", requireAuth, async (req, res) => {
       $set.dynamicValues = body.dynamicValues;
     }
 
-    // User modelinde subRoles güncelle
-    let savedSubRoles = [];
-    if (body.subRoles != null) {
-      try {
-        const normalized = await normalizeSubRolesDynamic(body.subRoles);
-        console.log("🔧 Updating User.subRoles:", { userId, input: body.subRoles, normalized });
-        const updateResult = await User.updateOne({ _id: userId }, { $set: { subRoles: normalized } });
-        console.log("✅ User.updateOne result:", updateResult);
-        savedSubRoles = normalized;
-      } catch (err) {
-        console.error("❌ User.subRoles update error:", err);
-      }
-    }
-
     // Default seed (Sadece insert anı için)
     const defaults = {
       user: userId,
-      role: user.role || "driver",
+      role: user.role || "candidate",
       fullName: user.name || "",
       phone: user.phone || "",
       country: user.country || "TR",
@@ -269,7 +255,7 @@ router.put("/me", requireAuth, async (req, res) => {
 
     // User modelindeki subRoles'u profile response'una ekle
     if (profile) {
-      profile.subRoles = savedSubRoles.length > 0 ? savedSubRoles : (user.subRoles || []);
+      profile.subRoles = Array.isArray(user.subRoles) ? user.subRoles : [];
     }
 
     return res.json({ success: true, profile });

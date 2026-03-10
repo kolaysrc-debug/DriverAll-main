@@ -8,7 +8,7 @@
 // - Grup sırası localStorage'da saklanır (default sıra backend’den gelir)
 // ----------------------------------------------------------
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { fetchJobFilters, fetchPublicJobs, fetchLocationsList } from "@/lib/api/publicJobs";
@@ -50,6 +50,14 @@ function formatDate(dateStr?: string) {
   return d.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
+export default function JobsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 px-4 py-10 text-slate-100">Yükleniyor...</div>}>
+      <JobsPageContent />
+    </Suspense>
+  );
+}
+
 function buildParams(obj: Record<string, any>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(obj)) {
@@ -76,7 +84,7 @@ const LS_SELECTED_KEYS = "jobs_filters_selectedKeys_v1";
 // NEW: sadece GRUP sırası
 const LS_GROUP_ORDER = "jobs_filters_groupOrder_v1";
 
-export default function JobsPage() {
+function JobsPageContent() {
   const searchParams = useSearchParams();
   const [country, setCountry] = useState("TR");
 

@@ -1,7 +1,7 @@
 // DriverAll-main/drivercv-frontend/app/admin/groups/page.tsx
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import AdminOnly from "@/components/AdminOnly";
 import { useSearchParams } from "next/navigation";
 
@@ -1080,7 +1080,9 @@ function AdminFieldGroupsInner() {
 export default function AdminFieldGroupsPage() {
   return (
     <AdminOnly>
-      <AdminFieldGroupsInner />
+      <Suspense fallback={<div className="p-6 text-slate-200">Yükleniyor...</div>}>
+        <AdminFieldGroupsInner />
+      </Suspense>
     </AdminOnly>
   );
 }

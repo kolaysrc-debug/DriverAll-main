@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createAdRequestFromAd } from "@/lib/api/adRequests";
 
-export default function AdvertiserAdRequestNewPage() {
+function AdvertiserAdRequestNewPageContent() {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -65,5 +65,13 @@ export default function AdvertiserAdRequestNewPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdvertiserAdRequestNewPage() {
+  return (
+    <Suspense fallback={<div style={{ maxWidth: 900, margin: "0 auto", padding: 24 }}>Yükleniyor...</div>}>
+      <AdvertiserAdRequestNewPageContent />
+    </Suspense>
   );
 }

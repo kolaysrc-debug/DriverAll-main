@@ -25,6 +25,26 @@ export async function fetchMyAdRequests() {
   return apiFetch(`/api/ads/requests/mine`, { method: "GET" });
 }
 
+export async function fetchAdById(id: string) {
+  return apiFetch(`/api/ads/${encodeURIComponent(id)}`, { method: "GET" });
+}
+
+export async function updateAd(
+  id: string,
+  payload: {
+    title?: string;
+    description?: string;
+    imageUrl?: string;
+    targetUrl?: string;
+    countryTargets?: string[];
+  }
+) {
+  return apiFetch(`/api/ads/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload || {}),
+  });
+}
+
 // ----------------------------------------------------------
 // Admin
 // ----------------------------------------------------------

@@ -65,7 +65,7 @@ export const RuleManagerForm: React.FC<RuleManagerProps> = ({ initialData, allEx
                   key={zone}
                   onClick={() => {
                     const newZones = formData.zones.includes(zone) 
-                      ? formData.zones.filter(z => z !== zone)
+                      ? formData.zones.filter((z: string) => z !== zone)
                       : [...formData.zones, zone];
                     setFormData({...formData, zones: newZones});
                   }}

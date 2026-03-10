@@ -88,7 +88,7 @@ export default function AccountPage() {
   }
 
   return (
-    <RoleGate allowedRoles={["admin", "driver", "employer", "advertiser"]}>
+    <RoleGate allowRoles={["admin", "driver", "employer", "advertiser"]}>
       <div className="mx-auto max-w-3xl p-4 text-slate-100">
         <h1 className="mb-4 text-xl font-semibold">Hesap Bilgileri</h1>
 

@@ -7,3 +7,5 @@ yarn-error.log*
 .env
 .env.*
 uploads/runtime/
+
+admin_token.local.txt

@@ -10,7 +10,7 @@
 // - Başarılı işlem -> /dashboard (rol yönlendirme tek merkez)
 // ----------------------------------------------------------
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { loginMinimalUser, loginUser, registerMinimalUser, registerUser } from "@/lib/api/auth";
@@ -66,7 +66,7 @@ function normalizeRole(r: any): UserRole {
   return "driver";
 }
 
-export default function HomePage() {
+function HomePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -84,6 +84,7 @@ export default function HomePage() {
 
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [sessionUser, setSessionUser] = useState<StoredUser | null>(null);
+  const [checked, setChecked] = useState(false);
 
   // Auth form state
   const [name, setName] = useState("");
@@ -148,6 +149,7 @@ export default function HomePage() {
     };
 
     read();
+    setChecked(true);
     if (typeof window !== "undefined") {
       window.addEventListener("driverall-auth-changed", read);
       return () => window.removeEventListener("driverall-auth-changed", read);
@@ -404,10 +406,10 @@ export default function HomePage() {
 
   const loggedInRole = useMemo<UserRole>(() => normalizeRole(sessionUser?.role), [sessionUser]);
 
-  // Login sonrası ortak giriş noktası: /profile (shell)
+  // Giriş yapılmışsa dashboard'a yönlendir
   useEffect(() => {
     if (!sessionToken) return;
-    router.replace("/profile");
+    router.replace("/dashboard");
   }, [router, sessionToken]);
 
   // Featured jobs (logged-out landing) - Tier bazlı
@@ -541,7 +543,7 @@ export default function HomePage() {
         }
 
         setSuccess("Kayıt başarılı. Yönlendiriliyorsunuz...");
-        router.replace("/profile");
+        router.replace("/dashboard");
         return;
       }
 
@@ -566,7 +568,7 @@ export default function HomePage() {
       setSuccess("Giriş başarılı. Yönlendiriliyorsunuz...");
 
       if (nextUrl) router.replace(nextUrl);
-      else router.replace("/profile");
+      else router.replace("/dashboard");
     } catch (err: any) {
       setError(err?.message || "İşlem sırasında bir hata oluştu.");
     } finally {
@@ -575,7 +577,7 @@ export default function HomePage() {
   }
 
   // ----------------------------------------------------------
-  // Logged-in Home (role-based quick actions)
+  // Logged-in: dashboard'a yönlendirilir (yukarıdaki useEffect)
   // ----------------------------------------------------------
   if (sessionToken) {
     return (
@@ -776,7 +778,8 @@ export default function HomePage() {
           </Link>
           <div className="flex items-center gap-2">
             <Link href="/jobs" className="text-xs sm:text-sm text-slate-300 hover:text-white transition">İlanlar</Link>
-            <Link href="/register/auth" className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-emerald-400 transition">Giriş</Link>
+            <Link href="/register/auth" className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-100 hover:bg-slate-800 transition">Giriş</Link>
+            <Link href="/register/auth" className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-emerald-400 transition">Kayıt</Link>
           </div>
         </div>
       </nav>
@@ -1379,5 +1382,13 @@ export default function HomePage() {
         mainLabel="Hızlı Erişim"
       />
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 text-slate-100 px-4 py-10">Yükleniyor...</div>}>
+      <HomePageContent />
+    </Suspense>
   );
 }

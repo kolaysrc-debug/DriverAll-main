@@ -22,8 +22,7 @@ type LoggedInUser = {
   role?: string;
 };
 
-// ✅ advertiser eklendi
-type RoleFilter = "all" | "driver" | "employer" | "advertiser" | "admin";
+type RoleFilter = "all" | "candidate" | "employer" | "advertiser" | "admin" | "service_provider";
 
 export default function AdminUsersPage() {
   const router = useRouter();
@@ -57,7 +56,7 @@ export default function AdminUsersPage() {
   const [editing, setEditing] = useState<DriverUser | null>(null);
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
-  const [editRole, setEditRole] = useState("driver");
+  const [editRole, setEditRole] = useState("candidate");
   const [editNotes, setEditNotes] = useState("");
   const [editSubRoles, setEditSubRoles] = useState<string[]>([]);
 
@@ -124,7 +123,7 @@ export default function AdminUsersPage() {
   // ----------------------------------------------------
   const filteredUsers = users.filter((u) => {
     // Rol filtresi
-    const role = (u.role || "driver") as RoleFilter;
+    const role = (u.role || "candidate") as RoleFilter;
     if (roleFilter !== "all" && role !== roleFilter) {
       return false;
     }
@@ -202,7 +201,7 @@ export default function AdminUsersPage() {
     setEditing(user);
     setEditName(user.name || "");
     setEditEmail(user.email || "");
-    setEditRole(user.role || "driver");
+    setEditRole(user.role || "candidate");
     setEditNotes(user.notes || "");
     const subRoles = Array.isArray((user as any).subRoles) ? ((user as any).subRoles as string[]) : [];
     setEditSubRoles(subRoles);
@@ -340,14 +339,14 @@ export default function AdminUsersPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setRoleFilter("driver")}
+                onClick={() => setRoleFilter("candidate")}
                 className={`text-[11px] px-2 py-0.5 rounded ${
-                  roleFilter === "driver"
+                  roleFilter === "candidate"
                     ? "bg-sky-500 text-slate-950 font-semibold"
                     : "text-slate-300 hover:bg-slate-800"
                 }`}
               >
-                Sürücüler
+                Aday
               </button>
               <button
                 type="button"
@@ -361,7 +360,6 @@ export default function AdminUsersPage() {
                 İşverenler
               </button>
 
-              {/* ✅ Reklamverenler butonu eklendi */}
               <button
                 type="button"
                 onClick={() => setRoleFilter("advertiser")}
@@ -371,7 +369,19 @@ export default function AdminUsersPage() {
                     : "text-slate-300 hover:bg-slate-800"
                 }`}
               >
-                Reklamverenler
+                Reklamveren
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRoleFilter("service_provider")}
+                className={`text-[11px] px-2 py-0.5 rounded ${
+                  roleFilter === "service_provider"
+                    ? "bg-sky-500 text-slate-950 font-semibold"
+                    : "text-slate-300 hover:bg-slate-800"
+                }`}
+              >
+                Hizmet Veren
               </button>
 
               <button
@@ -441,15 +451,15 @@ export default function AdminUsersPage() {
                   required
                 />
 
-                {/* ✅ advertiser option eklendi */}
                 <select
                   value={editRole}
                   onChange={(e) => setEditRole(e.target.value)}
                   className="rounded-lg bg-slate-950 border border-slate-700 px-3 py-1.5 text-sm outline-none"
                 >
-                  <option value="driver">Sürücü / Aday</option>
+                  <option value="candidate">Aday</option>
                   <option value="employer">İşveren / Firma</option>
                   <option value="advertiser">Reklamveren</option>
+                  <option value="service_provider">Hizmet Veren</option>
                   <option value="admin">Admin</option>
                 </select>
 
@@ -622,13 +632,13 @@ export default function AdminUsersPage() {
                       )}
                     </td>
 
-                    {/* ✅ advertiser etiketi eklendi */}
                     <td className="px-3 py-2 text-xs">
                       <span className="inline-flex rounded-full bg-slate-800 px-2 py-0.5 text-[11px]">
                         {user.role === "admin" && "Admin"}
                         {user.role === "employer" && "İşveren / Firma"}
                         {user.role === "advertiser" && "Reklamveren"}
-                        {(!user.role || user.role === "driver") && "Sürücü / Aday"}
+                        {user.role === "service_provider" && "Hizmet Veren"}
+                        {(!user.role || user.role === "candidate") && "Aday"}
                       </span>
                     </td>
 

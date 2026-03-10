@@ -75,7 +75,7 @@ const roleSchema = new Schema({
   level: { type: Number, default: 0 }, // 0 = ana rol, 1 = alt rol, 2 = alt-alt rol
   category: { 
     type: String, 
-    enum: ["candidate", "business", "admin"],
+    enum: ["candidate", "employer", "advertiser", "service_provider", "admin"],
     required: true 
   },
   
@@ -224,12 +224,14 @@ roleSchema.statics.findByCategory = function(category) {
 
 // Pre-save middleware
 roleSchema.pre('save', async function(next) {
-  // Level'ı otomatik hesapla
-  if (this.parentRole) {
-    const parent = await this.constructor.findById(this.parentRole);
-    this.level = parent ? parent.level + 1 : 0;
-  } else {
-    this.level = 0;
+  // Level'ı otomatik hesapla (sadece level set edilmemişse)
+  if (this.level === undefined || this.level === null) {
+    if (this.parentRole) {
+      const parent = await this.constructor.findById(this.parentRole);
+      this.level = parent ? parent.level + 1 : 1;
+    } else {
+      this.level = 0;
+    }
   }
   
   next();
