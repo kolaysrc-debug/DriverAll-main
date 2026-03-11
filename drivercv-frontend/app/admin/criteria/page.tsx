@@ -606,7 +606,7 @@ export default function CriteriaPage() {
                   return (
                     <tr
                       key={field._id}
-                      className="border-t border-slate-800 hover:bg-slate-900/60"
+                      className="border-t border-slate-800 hover:bg-slate-800/50 transition-colors"
                     >
                       <td className="px-3 py-2 text-slate-400">
                         {idx + 1}

@@ -1014,7 +1014,7 @@ function AdminFieldsInner() {
                   <div
                     key={f._id}
                     id={`field-row-${f._id}`}
-                    className="rounded-lg border border-slate-700 bg-slate-950/30 p-3"
+                    className="rounded-lg border border-slate-700 bg-slate-950/30 p-3 hover:bg-slate-900/60 hover:border-slate-600 transition-colors"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>

@@ -575,7 +575,7 @@ export default function DynamicRolesPage() {
                      {mainRoles.map((role) => (
                         <tr
                           key={role._id}
-                          className={`border-t border-slate-800 cursor-pointer hover:bg-slate-900/80 ${selectedMainRoleId === role._id ? "bg-sky-500/15 ring-1 ring-inset ring-sky-500/40" : "bg-slate-900/40"}`}
+                          className={`border-t border-slate-800 cursor-pointer hover:bg-slate-800/50 ${selectedMainRoleId === role._id ? "bg-sky-500/15 ring-1 ring-inset ring-sky-500/40" : "bg-slate-900/40"}`}
                           onClick={() => {
                             setSelectedMainRoleId(role._id);
                             setSelectedSubRoleId(null);
@@ -642,7 +642,7 @@ export default function DynamicRolesPage() {
                         .map((role) => (
                           <tr
                             key={role._id}
-                            className={`border-t border-slate-800 cursor-pointer hover:bg-slate-900/80 ${selectedSubRoleId === role._id ? "bg-emerald-500/15 ring-1 ring-inset ring-emerald-500/40" : "bg-slate-900/40"}`}
+                            className={`border-t border-slate-800 cursor-pointer hover:bg-slate-800/50 ${selectedSubRoleId === role._id ? "bg-emerald-500/15 ring-1 ring-inset ring-emerald-500/40" : "bg-slate-900/40"}`}
                             onClick={() => {
                               setSelectedSubRoleId(role._id);
                               setEditingRole({ ...role });

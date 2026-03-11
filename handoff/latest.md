@@ -1,13 +1,23 @@
 # Dev Handoff Snapshot
 
-Generated: 2026-03-10T19:12:30.546Z
+Generated: 2026-03-11T12:02:07.660Z
 
 - Total: 22
 - Open: 11
-- Needs Admin Test: 0
+- Needs Admin Test: 1
 - Not OK: 0
 
 ## Open Tasks
+
+### giri-sayfalar-n-kontrol-et-k-sayfalar-n-kontrol-et — Giriş sayfalarını kontrol et. çıkış sayfalarını kontrol et.
+
+- Priority: high
+- Status: pending
+- Checklist:
+  - [x] Dev done
+  - [ ] Admin tested
+  - Result: (empty)
+  - Note: Root(/) logged-in->dashboard, logout->/, auth tek merkez, sosyal butonlar temizlendi
 
 ### hizmet-verenler-i-in-alt-yap — hizmet verenler için alt yapı.
 
@@ -21,15 +31,6 @@ Generated: 2026-03-10T19:12:30.546Z
 **Instruction**
 
 Bu tarafların özelliklerini tasarlayıp, sistemde varolmalarını sağlamak. Bu tarafların hizmetlerini verebilmeleri için gerekli entegrasyonu sağlamak. reklam veya hizmet tanıtımlarını sergileyebilmek. ve benzeri işler hakkında altyapı hazırlamakç
-
-### giri-sayfalar-n-kontrol-et-k-sayfalar-n-kontrol-et — Giriş sayfalarını kontrol et. çıkış sayfalarını kontrol et.
-
-- Priority: high
-- Status: pending
-- Checklist:
-  - [ ] Dev done
-  - [ ] Admin tested
-  - Result: (empty)
 
 ### adaylar-aaras-g-r-me-sosyal-uygulama — adaylar aarası görüşme sosyal uygulama
 
@@ -99,7 +100,7 @@ Package -> Order hattındaki eksik/yanlış endpoint veya UI bağlantıları tes
 ### groups-deletion-end-to-end-verification — Fields -> Groups/CV/filters deletion akışını uçtan uca doğrula
 
 - Priority: medium
-- Status: pending
+- Status: in_progress
 - Checklist:
   - [ ] Dev done
   - [ ] Admin tested
@@ -150,7 +151,7 @@ Grup sırası admin tarafından yönetilecek mi yoksa sabit mi kalacak, ürün k
 
 ## Needs Admin Test
 
-(none)
+- giri-sayfalar-n-kontrol-et-k-sayfalar-n-kontrol-et — Giriş sayfalarını kontrol et. çıkış sayfalarını kontrol et.
 
 ## Not OK
 

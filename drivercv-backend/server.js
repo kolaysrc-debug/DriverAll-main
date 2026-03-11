@@ -227,6 +227,11 @@ const approvalRoutes = safeRequireAny(["./routes/approvals"], "approvals");
 // Employer self-service branches
 const employerBranchesRoutes = safeRequireAny(["./routes/branchesEmployer"], "employerBranches");
 
+// Service Listings (Hizmet Veren)
+const serviceListingsRoutes = safeRequireAny(["./routes/serviceListings"], "serviceListings");
+const adminServiceCategoriesRoutes = safeRequireAny(["./routes/adminServiceCategories"], "adminServiceCategories");
+const publicServiceCategoriesRoutes = safeRequireAny(["./routes/publicServiceCategories"], "publicServiceCategories");
+
 // Uploads (avatar + document)
 const uploadsRoutes = safeRequireAny(["./routes/uploads"], "uploads");
 
@@ -349,6 +354,11 @@ if (adminPaymentsRoutes) app.use("/api/admin/payments", adminPaymentsRoutes);
 // Job Requests
 if (jobRequestsRoutes) app.use("/api/job-requests", jobRequestsRoutes);
 if (usersRoutes) app.use("/api/users", usersRoutes);
+
+// Service Listings + Categories
+if (serviceListingsRoutes) app.use("/api/service-listings", serviceListingsRoutes);
+if (adminServiceCategoriesRoutes) app.use("/api/admin/service-categories", adminServiceCategoriesRoutes);
+if (publicServiceCategoriesRoutes) app.use("/api/public/service-categories", publicServiceCategoriesRoutes);
 
 // ----------------------------------------------------------
 // HEALTH CHECK

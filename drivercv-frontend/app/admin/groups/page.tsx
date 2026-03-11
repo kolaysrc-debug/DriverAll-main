@@ -92,7 +92,7 @@ function SortableGroupRow({
       key={group._id}
       id={`group-row-${group._id}`}
       className={`border-t border-slate-800 ${
-        selected ? "bg-slate-900/90" : "bg-slate-900/40"
+        selected ? "bg-blue-900/40 ring-1 ring-blue-500/40" : "bg-slate-900/40"
       }`}
     >
       <td className="px-3 py-2 text-slate-400 whitespace-nowrap">{idx + 1}</td>
@@ -761,8 +761,8 @@ function AdminFieldGroupsInner() {
                       <tr
                         key={n.key}
                         id={`node-row-${n.key}`}
-                        className={`border-t border-slate-800 cursor-pointer hover:bg-slate-900/80 ${
-                          editingNode?.key === n.key ? "bg-slate-900/90" : "bg-slate-900/40"
+                        className={`border-t border-slate-800 cursor-pointer hover:bg-slate-800/50 transition-colors ${
+                          editingNode?.key === n.key ? "bg-blue-900/40 ring-1 ring-blue-500/40" : "bg-slate-900/40"
                         }`}
                         onClick={() => startEditNode(n)}
                       >

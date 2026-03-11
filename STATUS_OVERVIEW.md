@@ -1,184 +1,221 @@
-# DriverAll Status Overview
+# DriverAll — Proje Durum & Kontrol Merkezi
 
-Bu dosya, dağınık duran TODO / reminder / log bilgisini tek yerde toplamak için oluşturuldu.
+> **Bu dosya AI (Cascade) + insan arasında TEK KAYNAK (single source of truth).**
+> Windsurf sohbet/bağlam kaybolursa **önce bu dosyayı oku** ve devam et.
+> Son güncelleme: 2026-03-11
 
-## CURRENT CONTEXT (tek kaynak) — buradan devam
+---
 
-Bu repo ile ilgili sohbet/bağlam kaybolursa (Windsurf kapanınca vs.) **önce bu bölümü oku** ve devam et.
+## 🔁 AI ile Çalışma Protokolü
 
-### Şu an ne yapıyoruz?
+### Kontrol mekanizmaları (3 katman)
 
-- Aktif ekran/akış: **Admin Tasks**
-  - Route: `/admin/tasks`
-  - Amaç: Talimatları/görevleri kalıcı şekilde burada takip etmek (dev yaptı / admin test / ok-not ok / status).
+| Katman | Nerede | Ne İşe Yarar |
+|--------|--------|--------------|
+| **1. Admin Tasks DB** | `/admin/tasks` (InstructionTask modeli) | Kalıcı görev takibi: talimat → dev yaptı → admin test → ok/not_ok |
+| **2. Bu dosya (STATUS_OVERVIEW.md)** | Repo kökü | AI bağlam kaybını önler. Proje durumu, açık işler, teknik notlar |
+| **3. Cascade todo_list** | Windsurf içi | Oturum bazlı anlık iş takibi (geçici — oturum bitince kaybolur) |
 
-### Resume checklist (sabah/yeniden açınca)
+### Oturum başlangıç rutini (sabah / yeni sohbet)
 
-1) Mongo çalışıyor mu?
-2) Backend ayakta mı?
-   - `GET http://127.0.0.1:3001/api/health`
-3) Frontend ayakta mı?
-   - `http://localhost:3000`
-4) Admin login -> `/admin/tasks`
-5) Task listesi gelmiyorsa:
-   - DevTools Network: `/api/admin/tasks` status (401/403/500?)
+1. `STATUS_OVERVIEW.md` oku → bağlamı al
+2. `/admin/tasks` kontrol et → açık görevleri gör
+3. Health check: `GET http://127.0.0.1:3001/api/health` → mongo.name = `driverall`
+4. Frontend: `http://localhost:3000` açılıyor mu?
+5. todo_list güncelle → oturuma başla
 
-### Windsurf sohbet kaybolursa ne yazmalısın?
+### Oturum bitiş rutini
 
-- Şu 2 satır yeter:
-  - `Mongo ok, backend up, frontend up`
-  - `Şu an /admin/tasks açtım, network sonucu: <status>`
+1. Yapılanları `/admin/tasks`'ta işaretle (devDone: true)
+2. `STATUS_OVERVIEW.md`'yi güncelle
+3. Gerekirse git commit al
 
-### /admin/tasks teknik not
+### Windsurf sohbet kaybolursa ne yaz?
 
+```
+STATUS_OVERVIEW.md'yi oku, oradan devam et.
+Mongo ok, backend up, frontend up.
+```
+
+---
+
+## 📊 Proje Genel Durumu
+
+### Tamamlanan Büyük Özellikler
+
+- [x] **Auth sistemi**: Email + OTP (Twilio) + Google OAuth + Yandex OAuth
+- [x] **Rol sistemi**: admin, employer, advertiser, driver, service_provider
+- [x] **CV/Profil motoru**: FieldDefinition + FieldGroup + dinamik profil alanları
+- [x] **İlan motoru**: Job CRUD + onay akışı + placement
+- [x] **Reklam motoru**: Ad CRUD + AdRequest + AdCampaign + placement
+- [x] **Paket motoru**: Package CRUD + PackageOrder + PaymentTransaction + EFT bildirimi
+- [x] **Hizmet veren sistemi**: ServiceListing CRUD + dinamik ServiceCategory motoru
+- [x] **Admin paneli**: Dashboard + tüm CRUD sayfalar + sidebar navigasyon
+- [x] **Belge bitiş tarihi sistemi**: Otomatik hesaplama + notification ayarları
+- [x] **Alt kullanıcı/şube sistemi**: SubUser + Branch yönetimi
+- [x] **Talimat/görev takibi**: `/admin/tasks` (InstructionTask)
+
+### Build Durumu
+
+- Frontend `npm run build`: ✅ Geçiyor
+- TypeScript: ✅ 0 hata
+- Backend: ✅ Çalışıyor
+
+---
+
+## 🗺️ Sayfa Haritası (Rol Bazlı)
+
+### Admin (`/admin/*`)
+- `/admin/dashboard` — Ana panel + sidebar (tüm linkler burada)
+- `/admin/tasks` — Talimat / yapılacak takibi
+- `/admin/users` — Kullanıcı yönetimi
+- `/admin/subusers` — Alt kullanıcılar
+- `/admin/branches` — Şube yönetimi
+- `/admin/company-profiles` — Şirket profilleri
+- `/admin/packages` — Paket yönetimi
+- `/admin/orders` — Sipariş yönetimi
+- `/admin/payments` — Ödeme yönetimi
+- `/admin/job-approvals` — İlan onayları
+- `/admin/job-requests` — İlan talep onayları
+- `/admin/ad-requests` — Reklam talepleri
+- `/admin/ad-campaigns` — Reklam kampanyaları
+- `/admin/placements` — Ad placements
+- `/admin/service-categories` — Hizmet kategorileri (yeni)
+- `/admin/groups` — Grup motoru
+- `/admin/fields` — Alan / eşleme motoru
+- `/admin/criteria` — Kriter motoru
+- `/admin/dynamic-roles` — Dinamik roller
+- `/admin/dynamic-profiles` — Dinamik profiller
+- `/admin/dynamic-fields` — Profil alanları
+- `/admin/industries` — Sektörler
+- `/admin/geo-groups` — Geo gruplar
+- `/admin/business-policies` — İş politikaları
+
+### Driver (`/driver/*`)
+- `/driver/dashboard` — Ana panel
+- `/driver/applications` — Başvurularım
+- `/cv` — Profil & CV düzenle
+- `/jobs` — İlanlara gözat
+- `/account` — Hesap ayarları
+
+### Employer (`/employer/*`)
+- `/employer/dashboard` — Ana panel
+- `/employer/jobs` — İlanlarım
+- `/employer/jobs/new` — Yeni ilan
+- `/employer/job-requests` — İlan taleplerim
+- `/employer/applications` — Başvurular
+- `/employer/branches` — Şubelerim
+- `/employer/profile` — Firma profili
+
+### Advertiser (`/advertiser/*`)
+- `/advertiser/dashboard` — Ana panel
+- `/advertiser/ads` — Reklamlarım
+- `/advertiser/requests` — Taleplerim
+- `/advertiser/requests/new` — Yeni talep
+- `/advertiser/profile` — Profil
+
+### Service Provider (`/service-provider/*`)
+- `/service-provider/dashboard` — Ana panel
+- `/service-provider/services` — Hizmetlerim
+- `/service-provider/services/new` — Yeni hizmet ekle
+- `/service-provider/profile` — Firma profili
+
+### Ortak
+- `/` — Ana sayfa
+- `/login` → `/register/auth` — Giriş/Kayıt
+- `/auth/callback` — OAuth callback
+- `/account` — Hesap ayarları
+- `/packages` — Paket listele + satın al
+- `/orders` — Siparişlerim
+
+---
+
+## 🔴 AÇIK GÖREVLER (öncelik sırasıyla)
+
+### Yüksek Öncelik
+- [ ] **SubRoles iyileştirmeleri** (detay: `TODO_subRoles_improvements.md`)
+  - Admin/users'a subRoles alanı ekle
+  - Profil sayfasındaki hardcoded alt rolleri dinamik yap
+  - Role koleksiyonu sorununu çöz
+- [ ] **E2E akış audit'leri** (henüz test edilmedi)
+  - Package → Order → Admin mark-paid → credits aktif
+  - Employer job create → jobRequest → admin approve → publish + credit decrement
+  - AD package → order → AdRequest → approve → AdCampaign + credit
+- [ ] **Admin UI stabilizasyonu**: Tüm fetch çağrılarını `apiFetch/authHeaders` standardına geçir
+
+### Orta Öncelik
+- [ ] Aday profili / dynamic fields eksik akışlarını tamamla
+- [ ] Groups node management: deletion cleanup e2e doğrulama
+- [ ] FieldGroup sıralama (group ordering) konfigürasyonu
+
+### Düşük Öncelik
+- [ ] MongoDB Windows servis: StartupType Automatic
+- [ ] Apple OAuth: Developer hesabı açılınca credential ekle
+- [ ] Microsoft OAuth: İhtiyaç olursa
+
+---
+
+## ⚙️ Teknik Notlar
+
+### Veritabanı
+- **MongoDB**: `driverall` (tek DB — `driverall_dev` artık kullanılmıyor)
+- Default URI: `mongodb://127.0.0.1:27017/driverall`
+- PC reboot sonrası Mongo durabilir → `services.msc` → Start
+
+### Portlar
+- Backend: `3001`
+- Frontend: `3000`
+
+### Auth
+- JWT expiry: `JWT_EXPIRES_IN` env (default `30d`)
+- localStorage keys: `driverall_token`, `driverall_user`
+- Legacy `token/user` otomatik migrate olur (`lib/session.ts`)
+
+### Seed Scriptleri (`drivercv-backend/scripts/`)
+- `seedServiceCategories.js` — Hizmet kategorileri (9 varsayılan)
+- `seedFieldGroups.js` — EHL_TR, SRC_TR grupları
+- `seedPassportVisaOptions.js` — Pasaport/vize seçenekleri
+- `seedPassportVisaFields.js` — Pasaport/vize alanları
+- `seedCvFieldsAndDemoCv.js` — CV alanları + demo CV
+
+### Admin Tasks Sistemi
 - Frontend: `drivercv-frontend/app/admin/tasks/page.tsx`
 - Backend: `drivercv-backend/routes/adminTasks.js`
 - Model: `drivercv-backend/models/InstructionTask.js`
-- Endpoint admin-only:
-  - `GET/POST/PUT /api/admin/tasks` => `requireAuth + requireRoles("admin")`
+- Akış: talimat yazılır → `devDone` işaretlenir → `adminTested` → `adminResult: ok/not_ok`
 
-## Hızlı Linkler
+### Paket Motoru
+- Model: `Package.js` (JOB/AD/BOTH), `PackageOrder.js`, `PaymentTransaction.js`
+- Admin: `/api/admin/packages` (CRUD), `/api/admin/orders` (mark-paid)
+- Public: `/api/packages` (list+buy), `/api/orders/mine`
+- EFT: `/api/payments/orders/:orderId/manual-eft`
 
-- Görev / talimat ekranı: `/admin/tasks`
-- Admin ana sayfa kartı: `Admin > Talimat / Yapılacak Takibi`
-- Frontend build doğrulama komutu:
-  - `drivercv-frontend` içinde `npm run build`
+### Hizmet Veren Kategori Motoru
+- Model: `ServiceCategory.js` (key, label, icon, relatedCriteriaKeys, relatedGroupKeys)
+- Admin: `/api/admin/service-categories` (CRUD)
+- Public: `/api/public/service-categories` (aktif olanlar)
+- Frontend: Kategoriler API'den dinamik geliyor (hardcoded değil)
 
-## Şu an en güncel durum
+---
 
-- Frontend production build: `geçiyor`
-- Build blocker zinciri: `temizlendi`
-- Next 16 `useSearchParams` / prerender blokları: `temizlendi`
-- Admin subusers aksiyon akışları: `bağlandı`
-- Admin branches runtime crash: `düzeltildi`
-- Advertiser ads edit API hizası: `düzeltildi`
+## 📁 Diğer Referans Dosyalar
 
-## Bu oturumda kapanan kritik hedefler
+Bu dosyalar **arşiv/detay** amaçlı. Ana takip bu dosyadan yapılır.
 
-### Tamamlandı
+| Dosya | İçerik |
+|-------|--------|
+| `TODO.md` | Eski admin UI audit TODO'ları |
+| `TODO_subRoles_improvements.md` | SubRoles detaylı geliştirme planı |
+| `PROJECT_TODO.md` | Groups/Fields motor tasarım notları |
+| `REMINDER_next_session.md` | Oturum hatırlatıcıları + OAuth/OTP detayları |
+| `LOGS_checklist_next_session.md` | Health check komutları + oturum logları |
 
-- [x] Advertiser ads edit sayfasındaki eksik API export/import build hatası düzeltildi.
-- [x] Admin branches sayfasındaki `manager/name` null crash düzeltildi.
-- [x] Admin subusers sayfasına null-safety ve production-safe stil düzeltmeleri eklendi.
-- [x] Admin subusers aksiyonları çalışan akışlara bağlandı:
-  - Düzenle
-  - Yetkiler
-  - Şube Ata
-  - Şifre Sıfırla
-  - Onayla
-  - Aktif/Pasif Yap
-- [x] Employer applications jobs boş modül build hatası kapatıldı.
-- [x] `RoleGate` prop adı uyumsuzlukları (`allowedRoles` -> `allowRoles`) düzeltildi.
-- [x] `admin/jobs/new` içindeki olmayan tip import’u düzeltildi.
-- [x] `admin/unified-engine-test` API tipi / payload hizası düzeltildi.
-- [x] `RuleManagerForm` implicit `any` hatası düzeltildi.
-- [x] `lib/api/applications.ts` header tipi düzeltildi.
-- [x] Next 16 prerender için `Suspense` uyumları eklendi.
-- [x] Frontend build tekrar çalıştırıldı ve başarıyla geçti.
+---
 
-### Doğrulandı
+## 📅 Oturum Geçmişi (kısa)
 
-- [x] `drivercv-frontend` içinde `npm run build` başarılı.
-- [x] Route üretimi tamamlandı.
-- [x] TypeScript aşaması geçti.
-- [x] Page data / static generation aşaması geçti.
-
-## Bu iş için değişen ana dosyalar
-
-### Frontend
-
-- `drivercv-frontend/lib/api/ads.ts`
-- `drivercv-frontend/app/admin/branches/page.tsx`
-- `drivercv-frontend/app/admin/subusers/page.tsx`
-- `drivercv-frontend/app/employer/applications/jobs/page.tsx`
-- `drivercv-frontend/app/account/page.tsx`
-- `drivercv-frontend/components/AdvertiserOnly.tsx`
-- `drivercv-frontend/app/admin/jobs/new/page.tsx`
-- `drivercv-frontend/app/admin/unified-engine-test/page.tsx`
-- `drivercv-frontend/components/RuleManagerForm.tsx`
-- `drivercv-frontend/lib/api/applications.ts`
-- `drivercv-frontend/app/login/page.tsx`
-- `drivercv-frontend/app/register/auth/page.tsx`
-- `drivercv-frontend/app/auth/callback/page.tsx`
-- `drivercv-frontend/app/jobs/page.tsx`
-- `drivercv-frontend/app/page.tsx`
-- `drivercv-frontend/app/admin/groups/page.tsx`
-- `drivercv-frontend/app/admin/fields/page.tsx`
-- `drivercv-frontend/app/advertiser/ad-requests/new/page.tsx`
-
-### Backend
-
-- `drivercv-backend/routes/subUsers.js`
-
-## Kısa runtime smoke-check
-
-### Auth
-
-- [ ] `/`
-  - Login/register görünümü açılıyor mu?
-- [ ] `/login`
-  - `/register/auth` yönlendirmesi çalışıyor mu?
-- [ ] `/register/auth`
-  - Email ile giriş/kayıt akışı çalışıyor mu?
-- [ ] `/auth/callback`
-  - Token ile yönlendirme bozulmadan tamamlanıyor mu?
-
-### Admin kritik ekranlar
-
-- [ ] `/admin/branches`
-  - Eksik manager / parentUser verisinde crash yok mu?
-- [ ] `/admin/subusers`
-  - Liste açılıyor mu?
-  - Eksik rol / parent / branch verisinde render bozulmuyor mu?
-  - Buton akışları çalışıyor mu?
-- [ ] `/admin/groups`
-  - Sayfa query param ile açılırken hata vermiyor mu?
-- [ ] `/admin/fields`
-  - Draft restore / createdGroupKey akışları bozulmadı mı?
-- [ ] `/admin/unified-engine-test`
-  - Edit save çağrıları hata atmıyor mu?
-
-### Employer / Advertiser
-
-- [ ] `/employer/applications/jobs`
-  - Redirect çalışıyor mu?
-- [ ] `/advertiser/ads/[id]`
-  - Reklam edit ekranı açılıyor ve kaydediyor mu?
-- [ ] `/advertiser/ad-requests/new?adId=...`
-  - `adId` prefill geliyor mu?
-
-### Jobs / Public
-
-- [ ] `/jobs`
-  - Query param ile açılışta hata yok mu?
-- [ ] `/jobs/[id]`
-  - Detay sayfası açılıyor mu?
-
-## Hâlâ açık / sonraki mantıklı işler
-
-- [ ] Admin UI genel stabilizasyonu:
-  - Tüm admin fetch çağrılarını ortak `apiFetch/authHeaders` standardına toplamak
-- [ ] E2E satın alma akışı audit:
-  - Package -> Order -> Admin orders
-- [ ] E2E ilan yayınlama/onay akışı audit:
-  - Employer job create -> request -> admin approve -> publish + credit decrement
-- [ ] E2E reklam akışı audit:
-  - Package -> Order -> AdRequest -> admin approve -> AdCampaign + credit decrement
-- [ ] Aday profili / dynamic fields eksik akışlarını tamamlama
-
-## Eski ama hâlâ referans alınabilecek dosyalar
-
-- `TODO.md`
-- `PROJECT_TODO.md`
-- `REMINDER_next_session.md`
-- `LOGS_checklist_next_session.md`
-- `handoff/latest.md`
-
-## Not
-
-Yapılacakları yazmak için hazırladığımız sayfa büyük olasılıkla:
-
-- **Route:** `/admin/tasks`
-- **Menü adı:** `Talimat / Yapılacak Takibi`
-
-Bu ekrana gidip yeni görevleri doğrudan kaydedebilirsin.
+- **2026-03-06**: OTP + credential yönetimi düzeltmeleri
+- **2026-03-08**: OAuth (Google, Yandex) + belge bitiş sistemi + notification + logout fix (302 dosya commit)
+- **2026-03-09**: Admin UI audit + hover iyileştirmeleri + driver/employer/advertiser sayfa yeniden tasarımları
+- **2026-03-10**: Hizmet veren (service_provider) backend + frontend tam implementasyon
+- **2026-03-11**: Paket motoru kontrolü ✅, dinamik kategori motoru (ServiceCategory), navigasyon linkleri düzenlendi, proje takip konsolidasyonu

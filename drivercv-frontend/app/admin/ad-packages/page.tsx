@@ -427,7 +427,7 @@ export default function AdminAdPackagesPage() {
 
                   if (!isEdit) {
                     return (
-                      <tr key={r._id} className="border-t border-slate-800 text-slate-100">
+                      <tr key={r._id} className="border-t border-slate-800 text-slate-100 hover:bg-slate-800/50 transition-colors">
                         <td className="px-3 py-2 font-semibold">{r.name}</td>
                         <td className="px-3 py-2">{r.country || "ALL"}</td>
                         <td className="px-3 py-2 text-xs text-slate-300">{r.geoLevel || "country"}</td>
@@ -468,7 +468,7 @@ export default function AdminAdPackagesPage() {
 
                   // edit row
                   return (
-                    <tr key={r._id} className="border-t border-slate-800 text-slate-100 bg-slate-950/50">
+                    <tr key={r._id} className="border-t border-slate-800 text-slate-100 bg-amber-950/30 ring-1 ring-amber-500/30">
                       <td className="px-3 py-2">
                         <input
                           className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2 py-1 text-sm text-slate-100"

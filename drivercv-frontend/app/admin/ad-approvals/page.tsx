@@ -223,10 +223,10 @@ export default function AdminAdApprovalsPage() {
               key={s}
               type="button"
               onClick={() => setStatus(s)}
-              className={`px-3 py-2 text-xs rounded-lg border ${
+              className={`px-3 py-2 text-xs rounded-lg border transition-colors ${
                 status === s
-                  ? "bg-slate-800 border-slate-600"
-                  : "bg-slate-900 border-slate-800 hover:bg-slate-800"
+                  ? "bg-sky-700/60 border-sky-400 text-sky-50"
+                  : "bg-slate-950 border-slate-700 text-slate-300 hover:bg-slate-800"
               }`}
             >
               {s}

@@ -616,7 +616,7 @@ export default function AdminUsersPage() {
                 filteredUsers.map((user, idx) => (
                   <tr
                     key={user._id}
-                    className="border-t border-slate-800 hover:bg-slate-900/60"
+                    className="border-t border-slate-800 hover:bg-slate-800/50 transition-colors"
                   >
                     <td className="px-3 py-2 text-slate-400">{idx + 1}</td>
 

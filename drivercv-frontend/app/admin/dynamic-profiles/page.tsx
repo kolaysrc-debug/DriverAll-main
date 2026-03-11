@@ -430,7 +430,7 @@ export default function DynamicProfilesPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-700">
                   {profiles.map((profile) => (
-                    <tr key={profile._id} className="hover:bg-slate-700/30">
+                    <tr key={profile._id} className="hover:bg-slate-800/50 transition-colors">
                       <td className="px-4 py-4">
                         <div>
                           <div className="text-sm font-medium text-slate-100">
