@@ -415,6 +415,179 @@ export default function AdminDashboardPage() {
               </div>
             </div>
               </div>
+
+              {/* 🛠️ Proje Takip Araçları */}
+              <div className="mt-10 mb-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-xl">🛠️</span>
+                  <h2 className="text-base font-bold text-slate-100">Proje Takip Araçları</h2>
+                  <span className="text-[10px] text-slate-500 border border-slate-700 rounded px-1.5 py-0.5">AI + İnsan kontrol sistemi</span>
+                </div>
+
+                {/* Akış Şeması */}
+                <div className="rounded-2xl border border-slate-700 bg-gradient-to-br from-slate-900/80 to-slate-950 p-5 mb-4">
+                  <div className="text-xs font-semibold text-slate-400 mb-3">Görev Yaşam Döngüsü</div>
+                  <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                    <div className="rounded-lg border border-amber-700/40 bg-amber-950/30 px-3 py-2 text-amber-300 font-semibold">
+                      1. Görev Yaz
+                    </div>
+                    <span className="text-slate-600">→</span>
+                    <div className="rounded-lg border border-violet-700/40 bg-violet-950/30 px-3 py-2 text-violet-300 font-semibold">
+                      2. AI Yapar
+                    </div>
+                    <span className="text-slate-600">→</span>
+                    <div className="rounded-lg border border-sky-700/40 bg-sky-950/30 px-3 py-2 text-sky-300 font-semibold">
+                      3. devDone ✓
+                    </div>
+                    <span className="text-slate-600">→</span>
+                    <div className="rounded-lg border border-teal-700/40 bg-teal-950/30 px-3 py-2 text-teal-300 font-semibold">
+                      4. Admin Test
+                    </div>
+                    <span className="text-slate-600">→</span>
+                    <div className="rounded-lg border border-emerald-700/40 bg-emerald-950/30 px-3 py-2 text-emerald-300 font-semibold">
+                      5. OK / NOT OK
+                    </div>
+                    <span className="text-slate-600">→</span>
+                    <div className="rounded-lg border border-rose-700/40 bg-rose-950/30 px-3 py-2 text-rose-300 font-semibold">
+                      6. Commit Al
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4 Araç Kartı */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  {/* Tasks */}
+                  <Link href="/admin/tasks" className="group">
+                    <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-5 hover:bg-slate-800 transition-all hover:scale-[1.02] hover:shadow-lg">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2.5 rounded-lg bg-amber-500/20 text-amber-400">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-slate-100 text-sm">Talimat / Görev Takibi</h3>
+                          <span className="text-[10px] text-amber-400/70">Ana kontrol paneli</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-400 mb-2">Görevleri yaz, AI&apos;a talimat ver. Yapılınca &quot;devDone&quot; işaretlenir. Sen test edip onaylarsın.</p>
+                      <div className="text-[10px] text-slate-500 space-y-0.5">
+                        <div>• Görev oluştur / düzenle / sil</div>
+                        <div>• devDone → adminTested → OK / NOT OK</div>
+                        <div>• Öncelik: high / medium / low</div>
+                      </div>
+                      <div className="mt-3 flex items-center text-amber-400 text-xs group-hover:text-amber-300">
+                        <span>Aç</span>
+                        <svg className="w-3.5 h-3.5 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </Link>
+
+                  {/* Commit Log */}
+                  <Link href="/admin/commit-logs" className="group">
+                    <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-5 hover:bg-slate-800 transition-all hover:scale-[1.02] hover:shadow-lg">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2.5 rounded-lg bg-violet-500/20 text-violet-400">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-slate-100 text-sm">Commit İzleme</h3>
+                          <span className="text-[10px] text-violet-400/70">Proje geçmişi</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-400 mb-2">Her commit&apos;in kaydı: ne yapıldı, kaç dosya değişti, build/TS durumu, admin onayı.</p>
+                      <div className="text-[10px] text-slate-500 space-y-0.5">
+                        <div>• Hash, tarih, yapılanların özeti</div>
+                        <div>• Dosya/satır istatistikleri (+/-)</div>
+                        <div>• Build ✓/✕ &amp; TypeScript ✓/✕</div>
+                        <div>• Admin inceleme &amp; not</div>
+                      </div>
+                      <div className="mt-3 flex items-center text-violet-400 text-xs group-hover:text-violet-300">
+                        <span>Aç</span>
+                        <svg className="w-3.5 h-3.5 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </Link>
+
+                  {/* STATUS_OVERVIEW.md */}
+                  <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-5">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2.5 rounded-lg bg-sky-500/20 text-sky-400">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-slate-100 text-sm">STATUS_OVERVIEW.md</h3>
+                        <span className="text-[10px] text-sky-400/70">AI bağlam dosyası</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-400 mb-2">AI oturum kaybettiğinde bu dosyayı okuyarak bağlamı geri alır. Proje durumu tek yerde.</p>
+                    <div className="text-[10px] text-slate-500 space-y-0.5">
+                      <div>• Tamamlanan özellikler listesi</div>
+                      <div>• Sayfa haritası (tüm roller)</div>
+                      <div>• Açık görevler (öncelik sıralı)</div>
+                      <div>• Teknik notlar (DB, port, auth, seed)</div>
+                      <div>• Oturum geçmişi</div>
+                    </div>
+                    <div className="mt-3 text-[10px] text-slate-600">
+                      Dosya: <code className="text-slate-500">STATUS_OVERVIEW.md</code> (repo kökü)
+                    </div>
+                  </div>
+
+                  {/* TODO Dosyaları */}
+                  <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-5">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2.5 rounded-lg bg-teal-500/20 text-teal-400">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-slate-100 text-sm">Detay TODO Dosyaları</h3>
+                        <span className="text-[10px] text-teal-400/70">Karmaşık görev planları</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-400 mb-2">Büyük görevlerin detaylı planları ayrı .md dosyalarında tutulur.</p>
+                    <div className="text-[10px] text-slate-500 space-y-0.5">
+                      <div>• <code className="text-slate-400">TODO.md</code> — Admin UI audit</div>
+                      <div>• <code className="text-slate-400">TODO_subRoles_improvements.md</code> — SubRoles planı</div>
+                      <div>• <code className="text-slate-400">PROJECT_TODO.md</code> — Motor tasarım notları</div>
+                      <div>• <code className="text-slate-400">REMINDER_next_session.md</code> — Oturum hatırlatıcıları</div>
+                    </div>
+                    <div className="mt-3 text-[10px] text-slate-600">
+                      Konum: repo kökü (<code className="text-slate-500">DriverAll-main/</code>)
+                    </div>
+                  </div>
+                </div>
+
+                {/* Nasıl Çalışır Açıklaması */}
+                <div className="mt-4 rounded-xl border border-dashed border-slate-700 bg-slate-900/30 p-4">
+                  <div className="text-xs font-semibold text-slate-300 mb-2">📌 Nasıl Çalışır?</div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px] text-slate-400">
+                    <div>
+                      <div className="font-semibold text-amber-300 mb-1">1. Görev Oluştur</div>
+                      <div>Tasks sayfasından yeni görev yaz veya TODO dosyasına ekle. AI bunu okuyup işe başlar.</div>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-violet-300 mb-1">2. Geliştir &amp; Commit</div>
+                      <div>AI görevi yapar → devDone işaretler → commit alınır → Commit İzleme&apos;ye kaydedilir.</div>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-emerald-300 mb-1">3. Test &amp; Onayla</div>
+                      <div>Admin test eder → OK ise onaylar. NOT OK ise görev tekrar açılır. STATUS dosyası güncellenir.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </main>
           </div>
         </div>

@@ -61,6 +61,9 @@ let _candidateSubRoleCache = {
   keys: /** @type {string[]} */ ([]),
 };
 
+// Fallback — DB boşsa bile bu key'ler kabul edilir
+const FALLBACK_SUB_ROLE_KEYS = ["driver", "operator", "courier", "valet"];
+
 async function getCandidateSubRoleKeys() {
   const now = Date.now();
   if (_candidateSubRoleCache.keys.length > 0 && now - _candidateSubRoleCache.loadedAtMs < 60_000) {
@@ -72,9 +75,14 @@ async function getCandidateSubRoleKeys() {
     .select({ name: 1 })
     .lean();
 
-  const keys = (roles || [])
+  let keys = (roles || [])
     .map((r) => String(r?.name || "").trim().toLowerCase())
     .filter((x) => !!x);
+
+  // DB boşsa fallback key'leri kullan
+  if (keys.length === 0) {
+    keys = FALLBACK_SUB_ROLE_KEYS;
+  }
 
   _candidateSubRoleCache = {
     loadedAtMs: now,
@@ -224,6 +232,14 @@ router.put("/me", requireAuth, async (req, res) => {
       $set.dynamicValues = body.dynamicValues;
     }
 
+    // SubRoles — User modeline kaydedilir (Profile'a değil)
+    let updatedSubRoles = Array.isArray(user.subRoles) ? user.subRoles : [];
+    if (Array.isArray(body.subRoles)) {
+      const normalized = await normalizeSubRolesDynamic(body.subRoles);
+      await User.updateOne({ _id: userId }, { $set: { subRoles: normalized } });
+      updatedSubRoles = normalized;
+    }
+
     // Default seed (Sadece insert anı için)
     const defaults = {
       user: userId,
@@ -253,9 +269,9 @@ router.put("/me", requireAuth, async (req, res) => {
       { new: true, upsert: true }
     ).lean();
 
-    // User modelindeki subRoles'u profile response'una ekle
+    // User modelindeki subRoles'u profile response'una ekle (güncel)
     if (profile) {
-      profile.subRoles = Array.isArray(user.subRoles) ? user.subRoles : [];
+      profile.subRoles = updatedSubRoles;
     }
 
     return res.json({ success: true, profile });

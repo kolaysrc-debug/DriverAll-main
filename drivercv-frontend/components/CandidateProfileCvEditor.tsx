@@ -8,6 +8,7 @@ import {
   resolveGroupSelection,
   isAutoAdded,
 } from "@/lib/groupCriteriaEngine";
+import { CANDIDATE_SUB_ROLES } from "@/types/role-engine";
 
 type Profile = {
   role?: string;
@@ -140,6 +141,8 @@ export default function CandidateProfileCvEditor() {
   const [loadingCities, setLoadingCities] = useState(false);
   const [loadingDistricts, setLoadingDistricts] = useState(false);
 
+  const [candidateSubRoles, setCandidateSubRoles] = useState<CandidateSubRoleItem[]>([]);
+  const [selectedSubRoles, setSelectedSubRoles] = useState<string[]>([]);
 
   const [cvDoc, setCvDoc] = useState<CvDoc | null>(null);
   const [cvValues, setCvValues] = useState<Record<string, any>>({});
@@ -181,6 +184,7 @@ export default function CandidateProfileCvEditor() {
           filtersRes,
           groupsRes,
           dpRes,
+          subRolesRes,
         ] = await Promise.all([
           fetch("/api/profile/me", { headers }),
           fetch("/api/cv", { headers }),
@@ -193,6 +197,7 @@ export default function CandidateProfileCvEditor() {
           }),
           fetch("/api/admin/field-groups", { headers }),
           fetch("/api/profile/dynamic", { headers }),
+          fetch("/api/public/roles/candidate-subroles", { cache: "no-store" }),
         ]);
 
         const pJson = await pRes.json();
@@ -203,6 +208,7 @@ export default function CandidateProfileCvEditor() {
         const filtersJson = await filtersRes.json().catch(() => ({}));
         const groupsJson = await groupsRes.json().catch(() => ({}));
         const dpJson = await dpRes.json().catch(() => ({}));
+        const subRolesJson = await subRolesRes.json().catch(() => ({}));
 
         const dp: DynamicProfileDoc | null = (dpJson as any)?.profile || null;
         const dpDocsRaw = Array.isArray(dp?.criteriaValues?.documents)
@@ -245,7 +251,31 @@ export default function CandidateProfileCvEditor() {
           setExperienceYears(p.experienceYears != null ? String(p.experienceYears) : "");
           setAvatarUrl(p.avatarUrl || "");
           setBirthDate(p.birthDate ? String(p.birthDate).slice(0, 10) : "");
+
+          // SubRoles — profil response'unda User modelinden gelen subRoles
+          const userSubRoles = Array.isArray(p.subRoles) ? p.subRoles : [];
+          setSelectedSubRoles(userSubRoles.map((s: any) => String(s || "").trim()).filter(Boolean));
         }
+
+        // Candidate sub-roles listesi (dinamik + fallback)
+        const subRolesList = Array.isArray((subRolesJson as any)?.subRoles) ? (subRolesJson as any).subRoles : [];
+        let parsedSubRoles: CandidateSubRoleItem[] = subRolesList
+          .map((x: any) => ({
+            key: String(x?.key || "").trim(),
+            label: String(x?.label || x?.key || "").trim(),
+            description: String(x?.description || "").trim() || undefined,
+          }))
+          .filter((x: CandidateSubRoleItem) => !!x.key);
+
+        // API boş döndüyse frontend fallback
+        if (parsedSubRoles.length === 0) {
+          parsedSubRoles = CANDIDATE_SUB_ROLES.map((r: { key: string; label: string; description: string }) => ({
+            key: r.key,
+            label: r.label,
+            description: r.description || undefined,
+          }));
+        }
+        setCandidateSubRoles(parsedSubRoles);
 
         const cvData = cvJson.cv || { values: {} };
         setCvDoc(cvData);
@@ -465,6 +495,7 @@ export default function CandidateProfileCvEditor() {
         cityCode: cityCode || null,
         district: district || null,
         districtCode: districtCode || null,
+        subRoles: selectedSubRoles,
         dynamicValues: {
           ...(profile?.dynamicValues || {}),
           location: locationObj,
@@ -1447,6 +1478,45 @@ export default function CandidateProfileCvEditor() {
                   </select>
                 </div>
               </div>
+
+              {/* Alt Roller (dinamik) */}
+              {candidateSubRoles.length > 0 && (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-slate-400">Alt Roller</label>
+                  <div className="flex flex-wrap gap-2">
+                    {candidateSubRoles.map((sr) => {
+                      const checked = selectedSubRoles.includes(sr.key);
+                      return (
+                        <label
+                          key={sr.key}
+                          className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs cursor-pointer transition-colors ${
+                            checked
+                              ? "border-violet-600/50 bg-violet-950/40 text-violet-200"
+                              : "border-slate-700 bg-slate-900/50 text-slate-400 hover:border-slate-600"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedSubRoles((prev) => [...prev, sr.key]);
+                              } else {
+                                setSelectedSubRoles((prev) => prev.filter((k) => k !== sr.key));
+                              }
+                            }}
+                            className="h-3 w-3 rounded border-slate-600 bg-slate-950 text-violet-500 accent-violet-500"
+                          />
+                          {sr.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {selectedSubRoles.length === 0 && (
+                    <p className="text-[10px] text-amber-400/70">En az bir alt rol seçmeniz önerilir.</p>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-1">
                 <label className="text-[10px] text-slate-400">Hakkımda</label>

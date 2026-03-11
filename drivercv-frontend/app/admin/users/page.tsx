@@ -87,8 +87,8 @@ export default function AdminUsersPage() {
       setSubRolesLoading(true);
       const res = await fetch("/api/public/roles/candidate-subroles");
       const data = await res.json();
-      if (data.success && Array.isArray(data.roles)) {
-        setAvailableSubRoles(data.roles.map((r: any) => ({
+      if (data.success && Array.isArray(data.subRoles)) {
+        setAvailableSubRoles(data.subRoles.map((r: any) => ({
           key: r.key || r.name,
           label: r.label || r.displayName || r.name
         })));
@@ -640,6 +640,18 @@ export default function AdminUsersPage() {
                         {user.role === "service_provider" && "Hizmet Veren"}
                         {(!user.role || user.role === "candidate") && "Aday"}
                       </span>
+                      {Array.isArray((user as any).subRoles) && (user as any).subRoles.length > 0 && (
+                        <div className="flex flex-wrap gap-0.5 mt-0.5">
+                          {((user as any).subRoles as string[]).map((sr) => {
+                            const found = availableSubRoles.find((a) => a.key === sr);
+                            return (
+                              <span key={sr} className="inline-flex rounded bg-violet-900/40 text-violet-300 px-1.5 py-0 text-[9px]">
+                                {found?.label || sr}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
                     </td>
 
                     <td className="px-3 py-2">

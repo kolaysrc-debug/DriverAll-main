@@ -155,8 +155,9 @@ export default function DynamicRolesPage() {
 
       const data = await response.json();
       if (data.success) {
-        setRoles(roles.map(role => role._id === updatedRole._id ? data.role : role));
-        setEditingRole(null);
+        setRoles((prev) => prev.map(role => role._id === updatedRole._id ? data.role : role));
+        setEditingRole({ ...data.role });
+        alert("Rol başarıyla güncellendi ✅");
       } else {
         throw new Error(data.message || "Rol güncellenemedi");
       }
@@ -190,11 +191,12 @@ export default function DynamicRolesPage() {
 
       const data = await response.json();
       if (data.success) {
-        setRoles(roles.filter(role => role._id !== roleId));
+        setRoles((prev) => prev.filter(role => role._id !== roleId));
         if (selectedSubRoleId === roleId) {
           setSelectedSubRoleId(null);
           setEditingRole(null);
         }
+        alert("Rol başarıyla silindi ✅");
       } else {
         throw new Error(data.message || "Rol silinemedi");
       }
@@ -230,7 +232,8 @@ export default function DynamicRolesPage() {
 
       const data = await response.json();
       if (data.success) {
-        setRoles(roles.map(r => r._id === role._id ? data.role : r));
+        setRoles((prev) => prev.map(r => r._id === role._id ? data.role : r));
+        setEditingRole({ ...data.role });
       } else {
         throw new Error(data.message || "Rol durumu güncellenemedi");
       }
@@ -506,7 +509,14 @@ export default function DynamicRolesPage() {
                   ← Geri
                 </Link>
                 <button 
-                  onClick={() => setShowCreateModal(true)}
+                  onClick={() => {
+                    setCreateForm((p) => ({
+                      ...p,
+                      category: selectedMainRole?.category || "candidate",
+                      parentRole: selectedMainRole?._id || "",
+                    }));
+                    setShowCreateModal(true);
+                  }}
                   className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded text-sm"
                 >
                   + Yeni Rol
@@ -548,7 +558,7 @@ export default function DynamicRolesPage() {
                   setCreateForm((p) => ({
                     ...p,
                     category: selectedMainRole?.category || "candidate",
-                    parentRole: "",
+                    parentRole: selectedMainRole?._id || "",
                   }));
                   setShowCreateModal(true);
                 }}
@@ -805,7 +815,16 @@ export default function DynamicRolesPage() {
         {showCreateModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-slate-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <h2 className="text-xl font-bold text-slate-100 mb-4">Yeni Rol Oluştur</h2>
+              <h2 className="text-xl font-bold text-slate-100 mb-2">Yeni Alt Rol Oluştur</h2>
+
+              {createForm.parentRole && (() => {
+                const parent = roles.find((r) => r._id === createForm.parentRole);
+                return parent ? (
+                  <div className="mb-3 text-sm text-sky-300 bg-sky-950/30 border border-sky-800/50 rounded-lg px-3 py-2">
+                    {parent.icon} <strong>{parent.displayName}</strong> altına yeni alt rol ekleniyor
+                  </div>
+                ) : null;
+              })()}
 
               {createError ? (
                 <div className="mb-3 text-sm text-red-300 bg-red-950/30 border border-red-800/60 rounded-lg px-3 py-2">
@@ -847,38 +866,32 @@ export default function DynamicRolesPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">Kategori</label>
-                    <select
-                      value={createForm.category}
-                      onChange={(e) => setCreateForm((p) => ({ ...p, category: e.target.value }))}
-                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
-                    >
-                      <option value="candidate">Aday</option>
-                      <option value="employer">İşveren / Firma</option>
-                      <option value="advertiser">Reklamveren</option>
-                      <option value="service_provider">Hizmet Veren</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">Parent Rol (alt rol yapmak için)</label>
-                    <select
-                      value={createForm.parentRole}
-                      onChange={(e) => setCreateForm((p) => ({ ...p, parentRole: e.target.value }))}
-                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
-                    >
-                      <option value="">(Ana rol)</option>
-                      {roles
-                        .filter((r) => !r.parentRole)
-                        .map((r) => (
-                          <option key={r._id} value={r._id}>
-                            {r.displayName} ({r.category})
-                          </option>
-                        ))}
-                    </select>
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Hangi ana rolün altına eklenecek?</label>
+                  <select
+                    value={createForm.parentRole}
+                    onChange={(e) => {
+                      const selected = roles.find((r) => r._id === e.target.value);
+                      setCreateForm((p) => ({
+                        ...p,
+                        parentRole: e.target.value,
+                        category: selected?.category || p.category,
+                      }));
+                    }}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
+                  >
+                    <option value="">-- Ana rol seçin --</option>
+                    {roles
+                      .filter((r) => r.level === 0)
+                      .map((r) => (
+                        <option key={r._id} value={r._id}>
+                          {r.icon} {r.displayName}
+                        </option>
+                      ))}
+                  </select>
+                  {!createForm.parentRole && (
+                    <p className="text-[11px] text-amber-400/80 mt-1">Ana rol seçimi zorunludur.</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -935,6 +948,10 @@ export default function DynamicRolesPage() {
                   onClick={async () => {
                     try {
                       setCreateError(null);
+                      if (!createForm.parentRole) {
+                        setCreateError("Lütfen ana rol seçin.");
+                        return;
+                      }
                       setCreating(true);
                       const token = getToken();
                       if (!token) throw new Error("Token bulunamadı");
