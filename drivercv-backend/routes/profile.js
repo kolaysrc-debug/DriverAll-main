@@ -56,21 +56,33 @@ function pickLocation(body, fallbackCountry = "TR") {
   return { countryCode, cityCode, districtCode, label };
 }
 
-let _candidateSubRoleCache = {
-  loadedAtMs: 0,
-  keys: /** @type {string[]} */ ([]),
-};
+// Kategori bazlı sub-role cache (her kategori için ayrı)
+const _subRoleCache = new Map(); // category -> { loadedAtMs, keys[] }
 
-// Fallback — DB boşsa bile bu key'ler kabul edilir
+// Fallback — DB boşsa bile bu key'ler kabul edilir (sadece candidate)
 const FALLBACK_SUB_ROLE_KEYS = ["driver", "operator", "courier", "valet"];
 
-async function getCandidateSubRoleKeys() {
+// Kullanıcı rolünden kategori türet
+function roleToCategoryMap(role) {
+  const map = {
+    candidate: "candidate",
+    driver: "candidate",
+    employer: "employer",
+    advertiser: "advertiser",
+    service_provider: "service_provider",
+    admin: "admin",
+  };
+  return map[role] || "candidate";
+}
+
+async function getSubRoleKeysByCategory(category) {
   const now = Date.now();
-  if (_candidateSubRoleCache.keys.length > 0 && now - _candidateSubRoleCache.loadedAtMs < 60_000) {
-    return _candidateSubRoleCache.keys;
+  const cached = _subRoleCache.get(category);
+  if (cached && cached.keys.length > 0 && now - cached.loadedAtMs < 60_000) {
+    return cached.keys;
   }
 
-  const roles = await Role.find({ category: "candidate", level: { $gt: 0 }, isActive: true })
+  const roles = await Role.find({ category, level: { $gt: 0 }, isActive: true })
     .sort({ sortOrder: 1, level: 1, name: 1 })
     .select({ name: 1 })
     .lean();
@@ -79,24 +91,30 @@ async function getCandidateSubRoleKeys() {
     .map((r) => String(r?.name || "").trim().toLowerCase())
     .filter((x) => !!x);
 
-  // DB boşsa fallback key'leri kullan
-  if (keys.length === 0) {
+  // candidate kategorisi DB boşsa fallback key'leri kullan
+  if (keys.length === 0 && category === "candidate") {
     keys = FALLBACK_SUB_ROLE_KEYS;
   }
 
-  _candidateSubRoleCache = {
+  _subRoleCache.set(category, {
     loadedAtMs: now,
     keys: Array.from(new Set(keys)),
-  };
+  });
 
-  return _candidateSubRoleCache.keys;
+  return _subRoleCache.get(category).keys;
 }
 
-async function normalizeSubRolesDynamic(input) {
+// Geriye uyumluluk — candidate-only (eski referanslar için)
+async function getCandidateSubRoleKeys() {
+  return getSubRoleKeysByCategory("candidate");
+}
+
+async function normalizeSubRolesDynamic(input, category) {
   const arr = Array.isArray(input) ? input : [];
   const cleaned = arr.map((x) => String(x || "").trim().toLowerCase()).filter((x) => !!x);
 
-  const allowedKeys = new Set(await getCandidateSubRoleKeys());
+  const cat = category || "candidate";
+  const allowedKeys = new Set(await getSubRoleKeysByCategory(cat));
   return Array.from(new Set(cleaned.filter((x) => allowedKeys.has(x))));
 }
 
@@ -233,9 +251,11 @@ router.put("/me", requireAuth, async (req, res) => {
     }
 
     // SubRoles — User modeline kaydedilir (Profile'a değil)
+    // Kullanıcının rolüne göre doğru kategoriden validate edilir
     let updatedSubRoles = Array.isArray(user.subRoles) ? user.subRoles : [];
     if (Array.isArray(body.subRoles)) {
-      const normalized = await normalizeSubRolesDynamic(body.subRoles);
+      const userCategory = roleToCategoryMap(user.role || "candidate");
+      const normalized = await normalizeSubRolesDynamic(body.subRoles, userCategory);
       await User.updateOne({ _id: userId }, { $set: { subRoles: normalized } });
       updatedSubRoles = normalized;
     }
