@@ -4,16 +4,7 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import AdminOnly from "@/components/AdminOnly";
 import { useRouter, useSearchParams } from "next/navigation";
-
-function getToken(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("token") || "";
-}
-
-function authHeaders(): HeadersInit {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+import { authHeaders } from "@/lib/api/_core";
 
 function jsonHeaders(): HeadersInit {
   return { "Content-Type": "application/json", ...authHeaders() };

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import AdminOnly from "@/components/AdminOnly";
+import { apiFetch } from "@/lib/api/_core";
 
 type Task = {
   _id: string;
@@ -18,25 +19,6 @@ type Task = {
   tags?: string[];
   updatedAt?: string;
 };
-
-function getToken(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("token") || "";
-}
-
-function authHeaders(): HeadersInit {
-  const t = getToken();
-  return t ? { Authorization: `Bearer ${t}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
-}
-
-async function apiFetch(path: string, init?: RequestInit) {
-  const res = await fetch(path, { ...init, headers: { ...(init?.headers as any), ...authHeaders() } });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(data?.message || `HTTP ${res.status}`);
-  }
-  return data;
-}
 
 export default function AdminTasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);

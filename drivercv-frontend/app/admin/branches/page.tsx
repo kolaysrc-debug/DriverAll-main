@@ -6,6 +6,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminOnly from "@/components/AdminOnly";
 import { useRouter } from "next/navigation";
+import { getToken } from "@/lib/session";
 
 interface Branch {
   _id: string;
@@ -80,7 +81,7 @@ export default function BranchesPage() {
 
   const fetchBranches = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         handleAuthFailure("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
         return;

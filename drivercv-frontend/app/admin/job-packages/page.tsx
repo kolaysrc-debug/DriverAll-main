@@ -5,6 +5,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import AdminOnly from "@/components/AdminOnly";
 import { useRouter } from "next/navigation";
+import { authHeaders } from "@/lib/api/_core";
 
 type Placement = { key: string; label?: string; maxDays?: number; notes?: string };
 
@@ -24,15 +25,6 @@ type Row = {
   sortOrder?: number;
   note?: string;
 };
-
-function token() {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem("token") || "";
-}
-function authHeaders(): HeadersInit {
-  const t = token();
-  return t ? { Authorization: `Bearer ${t}` } : {};
-}
 
 function parseCsv(csv: string) {
   return String(csv || "")

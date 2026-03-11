@@ -1,5 +1,7 @@
 // DriverAll-main/drivercv-frontend/lib/api/groups.ts
 
+import { apiFetch } from "@/lib/api/_core";
+
 export type FieldGroupNode = {
   key: string;
   label: string;
@@ -28,48 +30,6 @@ export type FieldGroup = {
   active?: boolean;
   nodes: FieldGroupNode[];
 };
-
-const API_BASE_URL = "";
-
-// Aynı profil.ts mantığıyla
-async function apiFetch(path: string, options: RequestInit = {}) {
-  const url = `${API_BASE_URL}${path}`;
-  const method = (options.method || "GET").toUpperCase();
-  const hasBody = !!options.body;
-
-  const headers: Record<string, string> = {
-    ...(options.headers as Record<string, string> | undefined),
-  };
-
-  // Tarayıcı tarafında token'ı header'a ekle
-  if (typeof window !== "undefined") {
-    const token = window.localStorage.getItem("token");
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-  }
-
-  if (hasBody && method !== "GET" && method !== "HEAD") {
-    headers["Content-Type"] = "application/json";
-  }
-
-  const res = await fetch(url, {
-    ...options,
-    method,
-    headers,
-  });
-
-  const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    const message =
-      (data as any).message ||
-      `İstek başarısız (status: ${res.status})`;
-    throw new Error(String(message));
-  }
-
-  return data;
-}
 
 // ------------------------------------------------------
 // GRUP LİSTESİ

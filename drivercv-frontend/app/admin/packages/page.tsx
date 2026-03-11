@@ -6,16 +6,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import AdminOnly from "@/components/AdminOnly";
 import { useRouter } from "next/navigation";
-
-function getToken(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("token") || "";
-}
-
-function authHeaders(): HeadersInit {
-  const t = getToken();
-  return t ? { Authorization: `Bearer ${t}` } : {};
-}
+import { authHeaders } from "@/lib/api/_core";
 
 export default function AdminPackagesPage() {
   const router = useRouter();

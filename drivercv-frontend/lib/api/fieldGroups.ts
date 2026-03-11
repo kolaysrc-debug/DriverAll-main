@@ -3,6 +3,8 @@
 // Updated with Unified Rule Engine support (zones, coverage, requiredWith)
 // --------------------------------------------------------------------------------
 
+import { authHeaders as getAuthHeaders } from "@/lib/api/_core";
+
 export type FieldGroupNode = {
   key: string;
   label: string;
@@ -37,13 +39,6 @@ export type FieldGroup = {
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "";
-
-function getAuthHeaders(): Record<string, string> {
-  if (typeof window === "undefined") return {};
-  const token = window.localStorage.getItem("token");
-  if (!token) return {};
-  return { Authorization: `Bearer ${token}` };
-}
 
 async function fetchJson(path: string, options: RequestInit = {}) {
   const res = await fetch(`${API_BASE}${path}`, {

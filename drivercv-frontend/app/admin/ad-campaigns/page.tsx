@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import AdminOnly from "@/components/AdminOnly";
+import { authHeaders } from "@/lib/api/_core";
 
 type Row = {
   _id: string;
@@ -18,16 +19,6 @@ type Row = {
   createdAt?: string;
   updatedAt?: string;
 };
-
-function token() {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem("token") || "";
-}
-
-function authHeaders(): HeadersInit {
-  const t = token();
-  return t ? { Authorization: `Bearer ${t}` } : {};
-}
 
 function jsonHeaders(): HeadersInit {
   return { "Content-Type": "application/json", ...authHeaders() };

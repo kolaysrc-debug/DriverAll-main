@@ -1,5 +1,7 @@
 // /drivercv-frontend/lib/api/profile.ts
 
+import { apiFetch } from "@/lib/api/_core";
+
 export type Role = "driver" | "company" | "advertiser";
 
 export type ProfileData = {
@@ -25,50 +27,6 @@ export type ProfileSchemaField = {
   expiryRequired?: boolean;
   active?: boolean;
 };
-
-// Frontend hep kendi origin'ine /api/... isteği atacak.
-// Next.js bunu backend'e forward ediyor (next.config.ts içindeki rewrites ile).
-const API_BASE_URL = "";
-
-async function apiFetch(path: string, options: RequestInit = {}) {
-  const url = `${API_BASE_URL}${path}`;
-  const method = (options.method || "GET").toUpperCase();
-  const hasBody = !!options.body;
-
-  const headers: Record<string, string> = {
-    ...(options.headers as Record<string, string> | undefined),
-  };
-
-  // Tarayıcı tarafında token'ı header'a ekle
-  if (typeof window !== "undefined") {
-    const token = window.localStorage.getItem("token");
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-  }
-
-  // Body varsa JSON header ekle
-  if (hasBody && method !== "GET" && method !== "HEAD") {
-    headers["Content-Type"] = "application/json";
-  }
-
-  const res = await fetch(url, {
-    ...options,
-    method,
-    headers,
-  });
-
-  const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    const message =
-      (data as any).message ||
-      `İstek başarısız (status: ${res.status})`;
-    throw new Error(String(message));
-  }
-
-  return data;
-}
 
 // ---------------------------------------------------------------------
 //  KULLANICI PROFİLİ

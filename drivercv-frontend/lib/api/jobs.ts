@@ -6,31 +6,9 @@
 // - Admin: pending(draft) jobs
 // ======================================================
 
+import { authHeaders, handleJson } from "@/lib/api/_core";
+
 const API_BASE_URL = "";
-
-// ------------------------------------------------------
-// Auth helpers
-// ------------------------------------------------------
-function getToken(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("token") || "";
-}
-
-function authHeaders(): HeadersInit {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-async function handleJson(res: Response) {
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const msg =
-      (data && (data.message as string)) ||
-      `İstek başarısız (status: ${res.status})`;
-    throw new Error(`HTTP ${res.status}: ${String(msg)}`);
-  }
-  return data;
-}
 
 // ---------------------------
 // PUBLIC

@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminOnly from "@/components/AdminOnly";
+import { getToken } from "@/lib/session";
 
 interface Industry {
   _id: string;
@@ -103,7 +104,7 @@ export default function IndustriesPage() {
 
   const fetchIndustries = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         throw new Error("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
       }
@@ -164,7 +165,7 @@ export default function IndustriesPage() {
       setEditing(true);
       setEditError(null);
 
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) throw new Error("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
 
       const response = await fetch(`/api/admin/industries/${selectedIndustry._id}`, {
@@ -206,7 +207,7 @@ export default function IndustriesPage() {
       const ok = window.confirm("Bu sektörü silmek istediğinize emin misiniz?");
       if (!ok) return;
 
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) throw new Error("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
 
       const response = await fetch(`/api/admin/industries/${industry._id}`, {
@@ -233,7 +234,7 @@ export default function IndustriesPage() {
   const handleToggleActive = async (industry: Industry) => {
     try {
       if (industry.isSystem) return;
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) throw new Error("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
 
       const response = await fetch(`/api/admin/industries/${industry._id}`, {
@@ -264,7 +265,7 @@ export default function IndustriesPage() {
       setCreating(true);
       setCreateError(null);
 
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) throw new Error("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
 
       const response = await fetch("/api/admin/industries", {
