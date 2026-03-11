@@ -58,4 +58,63 @@ router.get("/candidate-subroles", async (req, res) => {
   }
 });
 
+// ----------------------------------------------------------
+// GET /api/public/roles/subroles?category=employer|candidate|...
+// Genel alt rol endpoint'i — tüm kategoriler için çalışır
+// ----------------------------------------------------------
+router.get("/subroles", async (req, res) => {
+  try {
+    const category = String(req.query.category || "").trim().toLowerCase();
+    if (!category) {
+      return res.status(400).json({
+        success: false,
+        message: "category query parametresi zorunludur (candidate, employer, advertiser, service_provider, admin)",
+      });
+    }
+
+    const validCategories = ["candidate", "employer", "advertiser", "service_provider", "admin"];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({
+        success: false,
+        message: `Geçersiz kategori: ${category}. Geçerli: ${validCategories.join(", ")}`,
+      });
+    }
+
+    const roles = await Role.find({
+      category,
+      level: { $gt: 0 },
+      isActive: true,
+    })
+      .sort({ sortOrder: 1, level: 1, name: 1 })
+      .lean();
+
+    let items = (roles || []).map((r) => ({
+      key: String(r.name || "").trim(),
+      label: String(r.displayName || r.name || "").trim(),
+      description: String(r.description || "").trim(),
+      level: typeof r.level === "number" ? r.level : 1,
+      parentRole: r.parentRole ? String(r.parentRole) : null,
+    }));
+
+    // candidate kategorisi için DB boşsa fallback
+    if (items.length === 0 && category === "candidate") {
+      items = FALLBACK_CANDIDATE_SUB_ROLES;
+    }
+
+    return res.json({
+      success: true,
+      category,
+      subRoles: items,
+      count: items.length,
+    });
+  } catch (err) {
+    console.error("GET /api/public/roles/subroles error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Sub-roles yüklenemedi",
+      error: err?.message || String(err),
+    });
+  }
+});
+
 module.exports = router;

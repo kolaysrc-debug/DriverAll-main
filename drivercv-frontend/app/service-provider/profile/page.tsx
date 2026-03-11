@@ -57,6 +57,10 @@ export default function ServiceProviderProfilePage() {
   const [serviceTypes, setServiceTypes] = useState("");       // "SRC Eğitimi, Ehliyet Kursu"
   const [experienceYears, setExperienceYears] = useState("");
 
+  // Alt roller
+  const [availableSubRoles, setAvailableSubRoles] = useState<{ key: string; label: string; description?: string }[]>([]);
+  const [selectedSubRoles, setSelectedSubRoles] = useState<string[]>([]);
+
   const headersAuth = useMemo(() => coreAuthHeaders(), []);
 
   async function load() {
@@ -86,6 +90,16 @@ export default function ServiceProviderProfilePage() {
       setContactEmail(p?.contactEmail || "");
       setServiceTypes(p?.serviceTypes || "");
       setExperienceYears(p?.experienceYears || "");
+
+      // Alt rolleri yükle
+      setSelectedSubRoles(Array.isArray(p.subRoles) ? p.subRoles : []);
+      try {
+        const srRes = await fetch("/api/public/roles/subroles?category=service_provider");
+        const srData = await srRes.json();
+        if (srRes.ok && Array.isArray(srData.subRoles)) {
+          setAvailableSubRoles(srData.subRoles);
+        }
+      } catch { /* alt roller opsiyonel */ }
     } catch (e: any) {
       setErr(e?.message || "Profil yüklenemedi.");
     } finally {
@@ -124,6 +138,7 @@ export default function ServiceProviderProfilePage() {
         stateCode, districtCode, aboutCompany,
         contactName, contactEmail,
         serviceTypes, experienceYears,
+        subRoles: selectedSubRoles,
       };
       const res = await fetch("/api/profile/me", {
         method: "PUT",
@@ -244,8 +259,38 @@ export default function ServiceProviderProfilePage() {
                 </div>
               </div>
 
-              {/* Sağ: Yetkili + Hizmet Detay */}
+              {/* Sağ: Alt Roller + Hizmet Detay + Yetkili */}
               <div className="md:col-span-5 space-y-4">
+                {/* Alt Roller */}
+                {availableSubRoles.length > 0 && (
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-3">
+                    <div className="text-sm font-semibold text-slate-100">Hizmet Türü / Alt Rol</div>
+                    <p className="text-[11px] text-slate-400">Verdiğiniz hizmet alanını seçin (birden fazla seçilebilir)</p>
+                    <div className="space-y-2">
+                      {availableSubRoles.map((sr) => (
+                        <label key={sr.key} className="flex items-start gap-2.5 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={selectedSubRoles.includes(sr.key)}
+                            onChange={() => {
+                              setSelectedSubRoles((prev) =>
+                                prev.includes(sr.key)
+                                  ? prev.filter((k) => k !== sr.key)
+                                  : [...prev, sr.key]
+                              );
+                            }}
+                            className="mt-0.5 h-4 w-4 rounded border-slate-600 bg-slate-950 text-teal-500 focus:ring-teal-600/30"
+                          />
+                          <div>
+                            <div className="text-sm text-slate-200 group-hover:text-teal-300 transition-colors">{sr.label}</div>
+                            {sr.description && <div className="text-[11px] text-slate-500">{sr.description}</div>}
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-4">
                   <div className="text-sm font-semibold text-slate-100">Hizmet Bilgileri</div>
 
