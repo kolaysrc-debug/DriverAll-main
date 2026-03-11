@@ -232,6 +232,9 @@ const serviceListingsRoutes = safeRequireAny(["./routes/serviceListings"], "serv
 const adminServiceCategoriesRoutes = safeRequireAny(["./routes/adminServiceCategories"], "adminServiceCategories");
 const publicServiceCategoriesRoutes = safeRequireAny(["./routes/publicServiceCategories"], "publicServiceCategories");
 
+// Commit Logs
+const adminCommitLogsRoutes = safeRequireAny(["./routes/adminCommitLogs"], "adminCommitLogs");
+
 // Uploads (avatar + document)
 const uploadsRoutes = safeRequireAny(["./routes/uploads"], "uploads");
 
@@ -359,6 +362,7 @@ if (usersRoutes) app.use("/api/users", usersRoutes);
 if (serviceListingsRoutes) app.use("/api/service-listings", serviceListingsRoutes);
 if (adminServiceCategoriesRoutes) app.use("/api/admin/service-categories", adminServiceCategoriesRoutes);
 if (publicServiceCategoriesRoutes) app.use("/api/public/service-categories", publicServiceCategoriesRoutes);
+if (adminCommitLogsRoutes) app.use("/api/admin/commit-logs", adminCommitLogsRoutes);
 
 // ----------------------------------------------------------
 // HEALTH CHECK
