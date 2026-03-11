@@ -152,7 +152,7 @@ export default function AdminGeoGroupsPage() {
                 </thead>
                 <tbody>
                   {list.map((r) => (
-                    <tr key={String(r._id || r.groupKey)} className="border-t border-slate-800">
+                    <tr key={String(r._id || r.groupKey)} className="border-t border-slate-800 hover:bg-slate-800/50 transition-colors">
                       <td className="px-3 py-2 font-mono text-xs">{r.groupKey}</td>
                       <td className="px-3 py-2">{r.label || "-"}</td>
                       <td className="px-3 py-2 text-xs text-slate-300">{(r.members || []).join(", ")}</td>

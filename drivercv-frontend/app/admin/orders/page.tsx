@@ -338,7 +338,7 @@ export default function AdminOrdersPage() {
                 </thead>
                 <tbody>
                   {items.map((o) => (
-                    <tr key={o._id} className="border-t border-slate-800">
+                    <tr key={o._id} className="border-t border-slate-800 hover:bg-slate-800/50 transition-colors">
                       <td className="px-3 py-2">
                         <div className="font-semibold text-slate-100">
                           {String(o?.packageSnapshot?.name || "Paket")}

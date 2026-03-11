@@ -282,21 +282,24 @@ export default function TopBar() {
   const isAdmin = role === "admin";
   const isEmployer = role === "employer" || role === "company";
   const isAdvertiser = role === "advertiser";
-  const isDriver = role === "driver" || (!isAdmin && !isEmployer && !isAdvertiser);
+  const isServiceProvider = role === "service_provider";
+  const isDriver = role === "driver" || (!isAdmin && !isEmployer && !isAdvertiser && !isServiceProvider);
 
   const dashboardHref = useMemo(() => {
     if (isAdmin) return "/admin/dashboard";
     if (isEmployer) return "/employer/dashboard";
     if (isAdvertiser) return "/advertiser/dashboard";
+    if (isServiceProvider) return "/service-provider/dashboard";
     return "/driver/dashboard";
-  }, [isAdmin, isEmployer, isAdvertiser]);
+  }, [isAdmin, isEmployer, isAdvertiser, isServiceProvider]);
 
   const profileHref = useMemo(() => {
     if (isDriver) return "/cv";
     if (isEmployer) return "/employer/profile";
     if (isAdvertiser) return "/advertiser/profile";
+    if (isServiceProvider) return "/service-provider/profile";
     return null;
-  }, [isDriver, isEmployer, isAdvertiser]);
+  }, [isDriver, isEmployer, isAdvertiser, isServiceProvider]);
 
   const displayName = useMemo(() => {
     const name = (user?.name || "").trim();
@@ -313,6 +316,7 @@ export default function TopBar() {
     if (r === "employer" || r === "company") return "İşveren";
     if (r === "advertiser") return "Reklamveren";
     if (r === "driver") return "Sürücü";
+    if (r === "service_provider") return "Hizmet Veren";
     return r;
   }, [user]);
 
@@ -372,6 +376,11 @@ export default function TopBar() {
         { href: "/advertiser/ads", label: "Reklamlarım" },
         { href: "/advertiser/requests", label: "Taleplerim" }
       );
+    } else if (isServiceProvider) {
+      items.push(
+        { href: "/service-provider/services", label: "Hizmetlerim" },
+        { href: "/service-provider/services/new", label: "Hizmet Ekle" }
+      );
     } else if (isDriver) {
       // şimdilik ekstra kısa yol eklemiyoruz (sade kalsın)
     }
@@ -382,7 +391,7 @@ export default function TopBar() {
       seen.add(it.href);
       return true;
     });
-  }, [dashboardHref, isAdmin, isEmployer, isAdvertiser, isDriver]);
+  }, [dashboardHref, isAdmin, isEmployer, isAdvertiser, isServiceProvider, isDriver]);
 
   // ----------------------------------------------------------
   // Admin flyout menüler (hover ile sağa açılır)

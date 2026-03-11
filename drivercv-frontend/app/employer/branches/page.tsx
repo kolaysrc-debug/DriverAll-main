@@ -272,118 +272,123 @@ export default function EmployerBranchesPage() {
 
   return (
     <EmployerOnly>
-      <div className="mx-auto max-w-6xl px-4 py-6 md:px-8">
-        <div className="mb-4 flex items-end justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-bold text-slate-50">Şubeler</h1>
-            <div className="text-xs text-slate-400">İlanlarda kullanılacak şube kayıtlarını yönetin.</div>
+      <div className="min-h-screen bg-slate-950 text-slate-50 pb-24 md:pb-6">
+        <div className="mx-auto max-w-6xl px-4 py-5 md:px-8 space-y-4">
+
+          {/* Header */}
+          <div className="rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 to-slate-950 p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h1 className="text-lg font-bold text-slate-50">Şubeler</h1>
+                <p className="text-xs text-slate-400 mt-0.5">İlanlarda kullanılacak şube kayıtlarını yönetin</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link href="/employer/dashboard" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 transition-colors">← Panel</Link>
+                <button onClick={beginCreate} className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-medium text-white hover:bg-emerald-500 transition-colors">+ Şube Ekle</button>
+              </div>
+            </div>
           </div>
+
+          {/* Alerts */}
+          {err && (
+            <div className="rounded-xl border border-rose-800/50 bg-rose-950/30 px-4 py-3 text-sm text-rose-200 flex items-center gap-2">
+              <span className="text-rose-400">✕</span> {err}
+            </div>
+          )}
+          {info && (
+            <div className="rounded-xl border border-emerald-700/50 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-200 flex items-center gap-2">
+              <span className="text-emerald-400">✓</span> {info}
+            </div>
+          )}
+
+          {/* Search */}
           <div className="flex gap-2">
-            <Link
-              href="/employer/dashboard"
-              className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 hover:bg-slate-800"
-            >
-              Dashboard
-            </Link>
-            <button
-              onClick={beginCreate}
-              className="rounded-lg bg-sky-500/20 px-3 py-2 text-sm font-semibold text-sky-200 hover:bg-sky-500/25"
-            >
-              + Şube ekle
-            </button>
-          </div>
-        </div>
-
-        {err ? (
-          <div className="mb-4 rounded-lg border border-red-900/40 bg-red-950/40 p-3 text-sm text-red-200">{err}</div>
-        ) : null}
-        {info ? (
-          <div className="mb-4 rounded-lg border border-emerald-900/40 bg-emerald-950/30 p-3 text-sm text-emerald-200">{info}</div>
-        ) : null}
-
-        <div className="mb-4 grid gap-2 md:grid-cols-12">
-          <div className="md:col-span-8">
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Şube ara (isim/lokasyon)"
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none"
+              placeholder="Şube ara (isim/lokasyon)…"
+              className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-slate-100 outline-none focus:border-emerald-600/50 focus:ring-1 focus:ring-emerald-600/30 transition-colors"
             />
+            <button onClick={load} disabled={loading} className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-xs text-slate-200 hover:bg-slate-800 transition-colors disabled:opacity-50">
+              Yenile
+            </button>
           </div>
-          <div className="md:col-span-4">
-            <Link
-              href="/employer/jobs/new"
-              className="block w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-center text-sm text-slate-100 hover:bg-slate-800"
-            >
-              Yeni ilan
-            </Link>
-          </div>
-        </div>
 
-        <div className="rounded-xl border border-slate-800 bg-slate-950">
-          {loading ? (
-            <div className="p-4 text-sm text-slate-300">Yükleniyor...</div>
-          ) : filtered.length === 0 ? (
-            <div className="p-4 text-sm text-slate-300">Şube bulunamadı.</div>
-          ) : (
-            <div className="overflow-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="bg-slate-900/60 text-slate-200">
-                  <tr>
-                    <th className="px-3 py-2">Şube</th>
-                    <th className="px-3 py-2">Lokasyon</th>
-                    <th className="px-3 py-2">Telefon</th>
-                    <th className="px-3 py-2 text-right">İşlem</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((b: any) => (
-                    <tr key={b._id} className="border-t border-slate-800">
-                      <td className="px-3 py-2">
-                        <div className="font-semibold text-slate-100">{String(b?.displayName || b?.name || "-")}</div>
-                        <div className="text-xs text-slate-500">code: {String(b?.code || "-")}</div>
-                      </td>
-                      <td className="px-3 py-2 text-slate-200">
-                        {String(b?.location?.stateName || b?.location?.stateCode || "-")}
-                        {b?.location?.districtName ? ` / ${String(b.location.districtName)}` : ""}
-                      </td>
-                      <td className="px-3 py-2 text-slate-200">{String(b?.contact?.phone || "-")}</td>
-                      <td className="px-3 py-2 text-right">
-                        <div className="flex flex-wrap justify-end gap-2">
-                          <button
-                            onClick={() => beginEdit(b)}
-                            className="rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-100 hover:bg-slate-800"
-                          >
-                            Düzenle
-                          </button>
-                          <button
-                            onClick={() => onDelete(String(b._id))}
-                            className="rounded-md border border-rose-800/60 bg-rose-950/30 px-3 py-1.5 text-xs text-rose-200 hover:bg-rose-950/40"
-                          >
-                            Sil
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* Count */}
+          <div className="text-xs text-slate-500">{filtered.length} şube</div>
+
+          {/* Loading */}
+          {loading && (
+            <div className="flex items-center gap-2 text-sm text-slate-400 py-8">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-600 border-t-emerald-400" />
+              Yükleniyor…
             </div>
           )}
-        </div>
+
+          {/* Empty */}
+          {!loading && filtered.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/30 p-8 text-center">
+              <div className="text-4xl mb-3">🏢</div>
+              <div className="text-slate-400 text-sm">Henüz şube eklenmemiş.</div>
+              <button onClick={beginCreate} className="mt-3 inline-block rounded-lg bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-500 transition-colors">
+                İlk Şubeyi Ekle
+              </button>
+            </div>
+          )}
+
+          {/* Branch Table */}
+          {!loading && filtered.length > 0 && (
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
+              <div className="overflow-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-slate-900/60 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3">Şube</th>
+                      <th className="px-4 py-3">Lokasyon</th>
+                      <th className="px-4 py-3">Telefon</th>
+                      <th className="px-4 py-3 text-right">İşlem</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((b: any) => (
+                      <tr key={b._id} className="border-t border-slate-800 hover:bg-slate-800/50 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="font-semibold text-slate-100">{String(b?.displayName || b?.name || "-")}</div>
+                          <div className="text-xs text-slate-500">code: {String(b?.code || "-")}</div>
+                        </td>
+                        <td className="px-4 py-3 text-slate-200">
+                          {String(b?.location?.stateName || b?.location?.stateCode || "-")}
+                          {b?.location?.districtName ? ` / ${String(b.location.districtName)}` : ""}
+                        </td>
+                        <td className="px-4 py-3 text-slate-200">{String(b?.contact?.phone || "-")}</td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex flex-wrap justify-end gap-2">
+                            <button onClick={() => beginEdit(b)} className="rounded-lg border border-sky-600/40 bg-sky-950/30 px-3 py-1.5 text-xs text-sky-300 hover:bg-sky-900/30 transition-colors">Düzenle</button>
+                            <button onClick={() => onDelete(String(b._id))} className="rounded-lg border border-rose-800/40 bg-rose-950/20 px-3 py-1.5 text-xs text-rose-300 hover:bg-rose-900/30 transition-colors">Sil</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+        </div>{/* /space-y-4 */}
 
         {open && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-            <div className="w-full max-w-2xl rounded-xl border border-slate-800 bg-slate-950 p-4">
-              <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-950 p-5">
+              <div className="mb-4 flex items-center justify-between gap-2">
                 <div className="text-sm font-semibold text-slate-100">
                   {editing ? "Şube Düzenle" : "Yeni Şube"}
                 </div>
                 <button
                   onClick={() => setOpen(false)}
-                  className="rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-100 hover:bg-slate-800"
+                  className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-100 hover:bg-slate-800 transition-colors"
                 >
-                  Kapat
+                  ✕
                 </button>
               </div>
 
@@ -502,6 +507,18 @@ export default function EmployerBranchesPage() {
             </div>
           </div>
         )}
+
+        {/* Mobil Alt Navigasyon */}
+        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-800 bg-slate-950/95 backdrop-blur md:hidden">
+          <div className="mx-auto max-w-6xl px-3 py-2">
+            <div className="grid grid-cols-4 gap-2">
+              <Link href="/employer/dashboard" className="rounded-xl border border-slate-800 bg-slate-950 px-2 py-2 text-center text-[11px] text-slate-200 hover:bg-slate-900/50 transition-colors">Panel</Link>
+              <Link href="/employer/jobs" className="rounded-xl border border-slate-800 bg-slate-950 px-2 py-2 text-center text-[11px] text-slate-200 hover:bg-slate-900/50 transition-colors">İlanlar</Link>
+              <Link href="/employer/applications" className="rounded-xl border border-slate-800 bg-slate-950 px-2 py-2 text-center text-[11px] text-slate-200 hover:bg-slate-900/50 transition-colors">Başvurular</Link>
+              <Link href="/employer/profile" className="rounded-xl border border-slate-800 bg-slate-950 px-2 py-2 text-center text-[11px] text-slate-200 hover:bg-slate-900/50 transition-colors">Profil</Link>
+            </div>
+          </div>
+        </nav>
       </div>
     </EmployerOnly>
   );

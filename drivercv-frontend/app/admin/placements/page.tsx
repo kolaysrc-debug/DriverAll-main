@@ -167,7 +167,7 @@ export default function AdminPlacementsPage() {
                 </thead>
                 <tbody>
                   {list.map((r) => (
-                    <tr key={String(r._id || r.key)} className="border-t border-slate-800">
+                    <tr key={String(r._id || r.key)} className="border-t border-slate-800 hover:bg-slate-800/50 transition-colors">
                       <td className="px-3 py-2 font-mono text-xs">{r.key}</td>
                       <td className="px-3 py-2">{r.label || "-"}</td>
                       <td className="px-3 py-2">{r.pageKey || "-"}</td>

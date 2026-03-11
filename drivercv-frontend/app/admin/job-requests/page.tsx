@@ -163,7 +163,7 @@ export default function AdminJobRequestsPage() {
 
               {!loading &&
                 list.map((r) => (
-                  <tr key={r._id} className="border-t border-slate-800 text-slate-100">
+                  <tr key={r._id} className="border-t border-slate-800 text-slate-100 hover:bg-slate-800/50 transition-colors">
                     <td className="px-3 py-2">{r.title || "-"}</td>
                     <td className="px-3 py-2 text-slate-300">{r.packageName || "-"}</td>
                     <td className="px-3 py-2 text-slate-300">{r.placementKey || "-"}</td>

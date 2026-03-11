@@ -185,7 +185,7 @@ export default function AdminAdRequestsPage() {
 
               {!loading &&
                 list.map((r) => (
-                  <tr key={r._id} className="border-t border-slate-800 text-slate-100 align-top">
+                  <tr key={r._id} className="border-t border-slate-800 text-slate-100 align-top hover:bg-slate-800/50 transition-colors">
                     <td className="px-3 py-2">{r.packageName || "-"}</td>
                     <td className="px-3 py-2 font-mono text-xs">{r.placementKey || "-"}</td>
                     <td className="px-3 py-2">{r.requestedDays || 0}</td>

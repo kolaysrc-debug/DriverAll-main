@@ -145,6 +145,15 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="mt-4">
+                <div className="text-xs font-semibold text-slate-400 px-2 py-2">Hizmet Veren</div>
+                <div className="space-y-1">
+                  <Link href="/admin/service-categories" className={linkCls("/admin/service-categories")}>
+                    Hizmet Kategorileri
+                  </Link>
+                </div>
+              </div>
+
+              <div className="mt-4">
                 <div className="text-xs font-semibold text-slate-400 px-2 py-2">Eski Fonksiyonlar</div>
                 <div className="space-y-1">
                   <Link href="/admin/ad-packages" className={linkCls("/admin/ad-packages")}>

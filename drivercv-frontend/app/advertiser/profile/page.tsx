@@ -11,6 +11,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import RoleGate from "@/components/RoleGate";
+import { getToken } from "@/lib/session";
+import { authHeaders as coreAuthHeaders } from "@/lib/api/_core";
 
 type Profile = any;
 
@@ -20,11 +22,6 @@ type LocItem = {
   parentCode?: string | null;
   level?: string;
 };
-
-function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem("token");
-}
 
 function normalizeCountryCode(value: string, fallback = "TR") {
   const v = String(value || "").trim().toUpperCase();
@@ -74,10 +71,7 @@ export default function AdvertiserProfilePage() {
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
 
-  const headersAuth = useMemo(() => {
-    const token = getToken();
-    return token ? ({ Authorization: `Bearer ${token}` } as HeadersInit) : ({} as HeadersInit);
-  }, []);
+  const headersAuth = useMemo(() => coreAuthHeaders(), []);
 
   async function load() {
     setLoading(true);
@@ -255,181 +249,149 @@ export default function AdvertiserProfilePage() {
     }
   }
 
+  // Auto-close success message
+  useEffect(() => {
+    if (!ok) return;
+    const t = setTimeout(() => setOk(null), 3000);
+    return () => clearTimeout(t);
+  }, [ok]);
+
+  const inputCls = "mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-violet-600/50 focus:ring-1 focus:ring-violet-600/30 transition-colors";
+  const labelCls = "text-xs text-slate-400 font-medium";
+
   return (
     <RoleGate allowRoles={["advertiser", "admin"]}>
-      <div className="mx-auto max-w-5xl px-4 py-6 md:px-8">
-        <div className="mb-4 flex items-end justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-bold text-slate-50">Reklamveren Profili</h1>
-            <div className="text-xs text-slate-400">
-              Reklam lokasyon kırılımı için il/ilçe kodlarını standart tutuyoruz.
+      <div className="min-h-screen bg-slate-950 text-slate-50 pb-24 md:pb-6">
+        <div className="mx-auto max-w-5xl px-4 py-5 md:px-8 space-y-4">
+
+          {/* Header */}
+          <div className="rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 to-slate-950 p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h1 className="text-lg font-bold text-slate-50">Reklamveren Profili</h1>
+                <p className="text-xs text-slate-400 mt-0.5">Firma bilgilerinizi güncelleyin</p>
+              </div>
+              <Link href="/advertiser/dashboard" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 transition-colors">← Panel</Link>
             </div>
           </div>
 
-          <div className="flex gap-2">
-            <Link
-              href="/advertiser/dashboard"
-              className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 hover:bg-slate-800"
-            >
-              Dashboard
-            </Link>
-          </div>
-        </div>
+          {/* Alerts */}
+          {err && (
+            <div className="rounded-xl border border-rose-800/50 bg-rose-950/30 px-4 py-3 text-sm text-rose-200 flex items-center gap-2">
+              <span className="text-rose-400">✕</span> {err}
+            </div>
+          )}
+          {ok && (
+            <div className="rounded-xl border border-emerald-700/50 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-200 flex items-center gap-2">
+              <span className="text-emerald-400">✓</span> {ok}
+            </div>
+          )}
 
-        {err ? (
-          <div className="mb-4 rounded-lg border border-red-900/40 bg-red-950/40 p-3 text-sm text-red-200">
-            {err}
-          </div>
-        ) : null}
+          {/* Loading */}
+          {loading ? (
+            <div className="flex items-center gap-2 text-sm text-slate-400 py-8">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-600 border-t-violet-400" />
+              Yükleniyor…
+            </div>
+          ) : (
+            <form onSubmit={onSave} className="grid gap-4 md:grid-cols-12">
+              {/* Sol: Reklamveren Bilgileri */}
+              <div className="md:col-span-7 rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-4">
+                <div className="text-sm font-semibold text-slate-100">Reklamveren Bilgileri</div>
 
-        {ok ? (
-          <div className="mb-4 rounded-lg border border-emerald-900/40 bg-emerald-950/30 p-3 text-sm text-emerald-200">
-            {ok}
-          </div>
-        ) : null}
-
-        {loading ? (
-          <div className="text-sm text-slate-300">Yükleniyor...</div>
-        ) : (
-          <form onSubmit={onSave} className="grid gap-4 md:grid-cols-12">
-            <div className="md:col-span-7 rounded-xl border border-slate-800 bg-slate-950 p-4">
-              <div className="text-sm font-semibold text-slate-100">Reklamveren Bilgileri</div>
-
-              <div className="mt-3 grid gap-3">
                 <div>
-                  <label className="text-xs text-slate-400">Firma adı</label>
-                  <input
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none"
-                    placeholder="Örn: Marka / Firma"
-                  />
+                  <label className={labelCls}>Firma adı *</label>
+                  <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className={inputCls} placeholder="Örn: Marka / Firma" />
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <div>
-                    <label className="text-xs text-slate-400">Marka adı</label>
-                    <input
-                      value={brandName}
-                      onChange={(e) => setBrandName(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none"
-                      placeholder="Opsiyonel"
-                    />
+                    <label className={labelCls}>Marka adı</label>
+                    <input value={brandName} onChange={(e) => setBrandName(e.target.value)} className={inputCls} placeholder="Opsiyonel" />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-400">Web sitesi</label>
-                    <input
-                      value={website}
-                      onChange={(e) => setWebsite(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none"
-                      placeholder="https://..."
-                    />
+                    <label className={labelCls}>Web sitesi</label>
+                    <input value={website} onChange={(e) => setWebsite(e.target.value)} className={inputCls} placeholder="https://..." />
                   </div>
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <div>
-                    <label className="text-xs text-slate-400">Telefon</label>
-                    <input
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none"
-                    />
+                    <label className={labelCls}>Telefon</label>
+                    <input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} />
                   </div>
-
                   <div>
-                    <label className="text-xs text-slate-400">Ülke</label>
-                    <input
-                      value={country}
-                      onChange={(e) => setCountry(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none"
-                      placeholder="TR"
-                    />
+                    <label className={labelCls}>Ülke</label>
+                    <input value={country} onChange={(e) => setCountry(e.target.value)} className={inputCls} placeholder="TR" />
                   </div>
                 </div>
 
+                {/* İl / İlçe */}
                 <div className="grid gap-3 md:grid-cols-2">
                   <div>
-                    <label className="text-xs text-slate-400">İl (zorunlu)</label>
-                    <select
-                      value={stateCode}
-                      onChange={(e) => setStateCode(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none"
-                      disabled={locLoading || normalizeCountryCode(country, "TR") !== "TR"}
-                    >
+                    <label className={labelCls}>İl (zorunlu) *</label>
+                    <select value={stateCode} onChange={(e) => setStateCode(e.target.value)} className={inputCls} disabled={locLoading || normalizeCountryCode(country, "TR") !== "TR"}>
                       <option value="">{locLoading ? "Yükleniyor..." : "Seçiniz"}</option>
-                      {states.map((s) => (
-                        <option key={s.code} value={s.code}>
-                          {s.name}
-                        </option>
-                      ))}
+                      {states.map((s) => (<option key={s.code} value={s.code}>{s.name}</option>))}
                     </select>
                   </div>
-
                   <div>
-                    <label className="text-xs text-slate-400">İlçe (opsiyonel)</label>
-                    <select
-                      value={districtCode}
-                      onChange={(e) => setDistrictCode(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none"
-                      disabled={locLoading || !stateCode || normalizeCountryCode(country, "TR") !== "TR"}
-                    >
+                    <label className={labelCls}>İlçe (opsiyonel)</label>
+                    <select value={districtCode} onChange={(e) => setDistrictCode(e.target.value)} className={inputCls} disabled={locLoading || !stateCode || normalizeCountryCode(country, "TR") !== "TR"}>
                       <option value="">{!stateCode ? "Önce il seçiniz" : locLoading ? "Yükleniyor..." : "Seçiniz"}</option>
-                      {districts.map((d) => (
-                        <option key={d.code} value={d.code}>
-                          {d.name}
-                        </option>
-                      ))}
+                      {districts.map((d) => (<option key={d.code} value={d.code}>{d.name}</option>))}
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400">Hakkımızda</label>
-                  <textarea
-                    value={aboutCompany}
-                    onChange={(e) => setAboutCompany(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none"
-                    rows={4}
-                  />
+                  <label className={labelCls}>Hakkımızda</label>
+                  <textarea value={aboutCompany} onChange={(e) => setAboutCompany(e.target.value)} className={inputCls} rows={4} placeholder="Kısa tanıtım..." />
                 </div>
               </div>
-            </div>
 
-            <div className="md:col-span-5 rounded-xl border border-slate-800 bg-slate-950 p-4">
-              <div className="text-sm font-semibold text-slate-100">Yetkili / İletişim</div>
+              {/* Sağ: Yetkili + Kaydet */}
+              <div className="md:col-span-5 space-y-4">
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-4">
+                  <div className="text-sm font-semibold text-slate-100">Yetkili / İletişim</div>
 
-              <div className="mt-3 grid gap-3">
-                <div>
-                  <label className="text-xs text-slate-400">Yetkili adı</label>
-                  <input
-                    value={contactName}
-                    onChange={(e) => setContactName(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none"
-                  />
-                </div>
+                  <div>
+                    <label className={labelCls}>Yetkili adı</label>
+                    <input value={contactName} onChange={(e) => setContactName(e.target.value)} className={inputCls} />
+                  </div>
 
-                <div>
-                  <label className="text-xs text-slate-400">Yetkili e-posta</label>
-                  <input
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none"
-                  />
-                </div>
+                  <div>
+                    <label className={labelCls}>Yetkili e-posta</label>
+                    <input value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className={inputCls} />
+                  </div>
 
-                <div className="pt-2">
                   <button
                     disabled={saving}
-                    className="w-full rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-500 disabled:opacity-60"
+                    className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50 transition-colors"
                   >
                     {saving ? "Kaydediliyor..." : "Kaydet"}
                   </button>
+
+                  <div className="text-[11px] text-slate-500">
+                    Not: Lokasyon kırılımı için il/ilçe kodlarını standart tutuyoruz.
+                  </div>
                 </div>
               </div>
+            </form>
+          )}
+        </div>
+
+        {/* Mobil Alt Navigasyon */}
+        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-800 bg-slate-950/95 backdrop-blur md:hidden">
+          <div className="mx-auto max-w-6xl px-3 py-2">
+            <div className="grid grid-cols-4 gap-2">
+              <Link href="/advertiser/dashboard" className="rounded-xl border border-slate-800 bg-slate-950 px-2 py-2 text-center text-[11px] text-slate-200 hover:bg-slate-900/50 transition-colors">Panel</Link>
+              <Link href="/advertiser/ads" className="rounded-xl border border-slate-800 bg-slate-950 px-2 py-2 text-center text-[11px] text-slate-200 hover:bg-slate-900/50 transition-colors">Reklamlar</Link>
+              <Link href="/advertiser/ads/new" className="rounded-xl border border-slate-800 bg-slate-950 px-2 py-2 text-center text-[11px] text-slate-200 hover:bg-slate-900/50 transition-colors">Yeni Talep</Link>
+              <Link href="/advertiser/profile" className="rounded-xl border border-violet-600/40 bg-violet-950/30 px-2 py-2 text-center text-[11px] font-medium text-violet-300">Profil</Link>
             </div>
-          </form>
-        )}
+          </div>
+        </nav>
       </div>
     </RoleGate>
   );

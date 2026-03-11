@@ -67,6 +67,16 @@ export default function AppMenu({ role }: Props) {
       ];
     }
 
+    if (r === "service_provider") {
+      return [
+        ...common,
+        { href: "/service-provider/dashboard", label: "Panel" },
+        { href: "/service-provider/services", label: "Hizmetlerim" },
+        { href: "/service-provider/services/new", label: "Hizmet Ekle" },
+        { href: "/service-provider/profile", label: "Firma Profili" },
+      ];
+    }
+
     // driver default
     return [
       ...common,

@@ -11,7 +11,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Role = "admin" | "employer" | "advertiser" | "driver";
+type Role = "admin" | "employer" | "advertiser" | "driver" | "service_provider";
 
 type StoredUser = {
   _id?: string;
