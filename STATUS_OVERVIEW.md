@@ -81,6 +81,7 @@ Mongo ok, backend up, frontend up.
 - `/admin/ad-campaigns` — Reklam kampanyaları
 - `/admin/placements` — Ad placements
 - `/admin/service-categories` — Hizmet kategorileri (yeni)
+- `/admin/commit-logs` — Commit izleme / proje geçmişi (yeni)
 - `/admin/groups` — Grup motoru
 - `/admin/fields` — Alan / eşleme motoru
 - `/admin/criteria` — Kriter motoru

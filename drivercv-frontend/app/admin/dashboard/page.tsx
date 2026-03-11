@@ -111,6 +111,9 @@ export default function AdminDashboardPage() {
                   <Link href="/admin/tasks" className={linkCls("/admin/tasks")}>
                     Talimat / Yapılacak Takibi
                   </Link>
+                  <Link href="/admin/commit-logs" className={linkCls("/admin/commit-logs")}>
+                    Commit İzleme
+                  </Link>
                   <Link href="/admin/business-policies" className={linkCls("/admin/business-policies")}>
                     Business Policies
                   </Link>
