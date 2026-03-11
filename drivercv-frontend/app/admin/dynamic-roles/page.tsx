@@ -6,6 +6,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminOnly from "@/components/AdminOnly";
 import { useRouter } from "next/navigation";
+import { getToken } from "@/lib/session";
 
 interface Role {
   _id: string;
@@ -78,7 +79,7 @@ export default function DynamicRolesPage() {
 
   const fetchRoles = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         throw new Error("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
       }
@@ -118,7 +119,7 @@ export default function DynamicRolesPage() {
 
   const handleSaveRole = async (updatedRole: Role) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const payload: any = {
         displayName: updatedRole.displayName,
         description: updatedRole.description,
@@ -170,7 +171,7 @@ export default function DynamicRolesPage() {
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch(`/api/admin/dynamic-roles/${roleId}`, {
         method: "DELETE",
         headers: {
@@ -208,7 +209,7 @@ export default function DynamicRolesPage() {
         alert("Sistem rolünün aktif/pasif durumu değiştirilemez.");
         return;
       }
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch(`/api/admin/dynamic-roles/${role._id}`, {
         method: "PUT",
         headers: {
@@ -935,7 +936,7 @@ export default function DynamicRolesPage() {
                     try {
                       setCreateError(null);
                       setCreating(true);
-                      const token = localStorage.getItem("token");
+                      const token = getToken();
                       if (!token) throw new Error("Token bulunamadı");
 
                       const payload: any = {

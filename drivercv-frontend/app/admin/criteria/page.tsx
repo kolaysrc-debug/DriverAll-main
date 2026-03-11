@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/api/_core";
 
 type ExpiryMode = "none" | "age" | "durationFromIssue";
 
@@ -41,39 +42,6 @@ type SimpleGroup = {
   groupKey: string;
   groupLabel: string;
 };
-
-// Aynı origin üzerinden Next.js API route'larına gideceğiz
-const API_BASE_URL = "";
-
-async function apiFetch(path: string, options: RequestInit = {}) {
-  const url = `${API_BASE_URL}${path}`;
-  const method = (options.method || "GET").toUpperCase();
-  const hasBody = !!options.body;
-
-  const fetchOptions: RequestInit = {
-    ...options,
-    method,
-  };
-
-  if (hasBody && method !== "GET" && method !== "HEAD") {
-    fetchOptions.headers = {
-      "Content-Type": "application/json",
-      ...(options.headers as Record<string, string> | undefined),
-    };
-  }
-
-  const res = await fetch(url, fetchOptions);
-  const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    const message =
-      (data && (data as any).message) ||
-      `İstek başarısız (status: ${res.status})`;
-    throw new Error(String(message));
-  }
-
-  return data;
-}
 
 function formatDuration(field: Field): string {
   const mode = field.expiryMode || "none";

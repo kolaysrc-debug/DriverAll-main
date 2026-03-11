@@ -6,6 +6,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import AdminOnly from "@/components/AdminOnly";
 import { useRouter } from "next/navigation";
+import { getToken } from "@/lib/session";
 
 type RoleItem = {
   _id: string;
@@ -110,7 +111,7 @@ export default function DynamicProfilesPage() {
   const fetchRoles = async () => {
     if (rolesLoaded) return;
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await fetch("/api/admin/dynamic-roles", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -169,7 +170,7 @@ export default function DynamicProfilesPage() {
   const fetchProfiles = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = getToken();
       
       const params = new URLSearchParams();
       if (filter.role) params.append("role", filter.role);

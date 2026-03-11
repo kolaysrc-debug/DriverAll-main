@@ -3,16 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import AdminOnly from "@/components/AdminOnly";
 import { useRouter } from "next/navigation";
-
-function getToken(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("token") || "";
-}
-
-function authHeaders(): HeadersInit {
-  const t = getToken();
-  return t ? { Authorization: `Bearer ${t}` } : {};
-}
+import { authHeaders } from "@/lib/api/_core";
 
 function jsonHeaders(): HeadersInit {
   return { "Content-Type": "application/json", ...authHeaders() };

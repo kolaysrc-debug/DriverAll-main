@@ -1,5 +1,7 @@
 // PATH: DriverAll-main/drivercv-frontend/lib/api/adminAdPackages.ts
 
+import { authHeaders } from "@/lib/api/_core";
+
 type AnyObj = Record<string, any>;
 
 function qs(params: Record<string, string | undefined>) {
@@ -12,14 +14,11 @@ function qs(params: Record<string, string | undefined>) {
 }
 
 async function json(method: string, path: string, body?: AnyObj) {
-  const token =
-    typeof window !== "undefined" ? window.localStorage.getItem("token") : null;
-
   const res = await fetch(path, {
     method,
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...authHeaders(),
     },
     body: body ? JSON.stringify(body) : undefined,
     cache: "no-store",

@@ -12,6 +12,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { approveAdRequest, fetchAdminAdRequests, rejectAdRequest } from "@/lib/api/ads";
+import { getToken } from "@/lib/session";
 
 type SafeUser = {
   role?: "admin" | "employer" | "advertiser" | "driver" | string;
@@ -35,7 +36,7 @@ type AdReqItem = {
 
 function readUserFromStorage(): SafeUser | null {
   try {
-    const token = window.localStorage.getItem("token");
+    const token = getToken();
     if (token) {
       const parts = token.split(".");
       if (parts.length >= 2) {

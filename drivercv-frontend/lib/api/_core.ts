@@ -1,19 +1,17 @@
 // PATH: drivercv-frontend/lib/api/_core.ts
 // ----------------------------------------------------------
 // Shared API fetch helper (same-origin /api)
-// - Adds Authorization header if token exists
+// - Adds Authorization header if token exists (via session.getToken)
 // - Parses JSON and throws readable errors
+// - 401/403 → clearSession + redirect to /register/auth
 // ----------------------------------------------------------
+
+import { getToken as sessionGetToken, clearSession } from "@/lib/session";
 
 const API_BASE_URL = "";
 
-function getToken(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("token") || "";
-}
-
 export function authHeaders(): HeadersInit {
-  const token = getToken();
+  const token = sessionGetToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -61,4 +59,23 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
   });
 
   return handleJson(res);
+}
+
+/**
+ * apiFetch with auto-redirect on 401/403.
+ * Admin sayfaları bu versiyonu kullanmalı.
+ */
+export async function apiFetchWithAuth(path: string, init: RequestInit = {}) {
+  try {
+    return await apiFetch(path, init);
+  } catch (err: any) {
+    const msg = err?.message || "";
+    if (msg.includes("401") || msg.includes("403")) {
+      clearSession();
+      if (typeof window !== "undefined") {
+        window.location.href = "/register/auth";
+      }
+    }
+    throw err;
+  }
 }

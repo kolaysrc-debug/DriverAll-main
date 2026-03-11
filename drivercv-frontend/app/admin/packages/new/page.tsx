@@ -5,15 +5,10 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminOnly from "@/components/AdminOnly";
-
-function getToken(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("token") || "";
-}
+import { authHeaders } from "@/lib/api/_core";
 
 function jsonHeaders(): HeadersInit {
-  const t = getToken();
-  return { "Content-Type": "application/json", ...(t ? { Authorization: `Bearer ${t}` } : {}) };
+  return { "Content-Type": "application/json", ...authHeaders() };
 }
 
 export default function AdminPackageNewPage() {

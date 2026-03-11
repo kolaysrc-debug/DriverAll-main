@@ -1,25 +1,8 @@
 // PATH: drivercv-frontend/lib/api/jobRequests.ts
 
+import { authHeaders, handleJson as json } from "@/lib/api/_core";
+
 type AnyObj = Record<string, any>;
-
-function getToken() {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem("token") || "";
-}
-
-function authHeaders(): HeadersInit {
-  const t = getToken();
-  return t ? { Authorization: `Bearer ${t}` } : {};
-}
-
-async function json(res: Response) {
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const msg = (data && (data.message as string)) || `İstek başarısız (status: ${res.status})`;
-    throw new Error(`HTTP ${res.status}: ${String(msg)}`);
-  }
-  return data;
-}
 
 // Employer create request
 export async function createJobRequest(body: AnyObj) {

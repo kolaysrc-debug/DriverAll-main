@@ -21,16 +21,7 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-
-function getToken(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("token") || "";
-}
-
-function authHeaders(): HeadersInit {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+import { authHeaders } from "@/lib/api/_core";
 
 function jsonHeaders(): HeadersInit {
   return { "Content-Type": "application/json", ...authHeaders() };

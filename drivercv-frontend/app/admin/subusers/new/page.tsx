@@ -3,6 +3,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminOnly from "@/components/AdminOnly";
+import { authHeaders } from "@/lib/api/_core";
+import { getToken } from "@/lib/session";
 
 type ParentUser = {
   _id: string;
@@ -19,17 +21,8 @@ type RoleItem = {
   isActive?: boolean;
 };
 
-function getToken(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("token") || "";
-}
-
-function authHeaders(): HeadersInit {
-  const token = getToken();
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
+function jsonHeaders(): HeadersInit {
+  return { "Content-Type": "application/json", ...authHeaders() };
 }
 
 export default function AdminSubUserNewPage() {
@@ -133,7 +126,7 @@ export default function AdminSubUserNewPage() {
 
       const res = await fetch("/api/admin/subusers", {
         method: "POST",
-        headers: authHeaders(),
+        headers: jsonHeaders(),
         body: JSON.stringify({
           parentUser: form.parentUser,
           name: form.name,

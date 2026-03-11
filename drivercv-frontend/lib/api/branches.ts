@@ -1,24 +1,7 @@
 // PATH: drivercv-frontend/lib/api/branches.ts
 // Branches API helper (same-origin /api)
 
-function getToken(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("token") || "";
-}
-
-function authHeaders(): HeadersInit {
-  const t = getToken();
-  return t ? { Authorization: `Bearer ${t}` } : {};
-}
-
-async function handleJson(res: Response) {
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const msg = (data && (data.message as string)) || `İstek başarısız (status: ${res.status})`;
-    throw new Error(msg);
-  }
-  return data;
-}
+import { authHeaders, handleJson } from "@/lib/api/_core";
 
 export async function fetchMyBranches() {
   const res = await fetch(`/api/branches/mine`, {

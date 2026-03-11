@@ -5,6 +5,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminOnly from "@/components/AdminOnly";
+import { authHeaders } from "@/lib/api/_core";
+import { getToken } from "@/lib/session";
 
 type RoleOption = {
   _id: string;
@@ -32,19 +34,6 @@ type PermissionItem = {
 
 const PERMISSION_MODULES = ["profile", "jobs", "ads", "users", "branches"];
 const PERMISSION_ACTIONS = ["create", "read", "update", "delete"];
-
-function getToken() {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("token") || "";
-}
-
-function authHeaders(json = false): HeadersInit {
-  const token = getToken();
-  return {
-    ...(json ? { "Content-Type": "application/json" } : {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
 
 function buildPermissionDraft(current: PermissionItem[] = []) {
   return PERMISSION_MODULES.map((module) => {
@@ -159,7 +148,7 @@ export default function SubUsersPage() {
 
   const fetchSubUsers = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         throw new Error("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
       }
@@ -462,7 +451,7 @@ export default function SubUsersPage() {
       setError(null);
       setBusyDeleteId(subuser._id);
 
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         throw new Error("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
       }

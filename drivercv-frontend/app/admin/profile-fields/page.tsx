@@ -10,6 +10,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getToken } from "@/lib/session";
 
 interface ProfileField {
   _id: string;
@@ -52,7 +53,7 @@ export default function ProfileFieldsPage() {
   async function loadFields() {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const res = await fetch("/api/admin/profile-fields", {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

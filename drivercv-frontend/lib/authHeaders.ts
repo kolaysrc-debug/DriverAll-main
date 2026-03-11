@@ -1,6 +1,7 @@
+import { getToken } from "@/lib/session";
+
 export function authHeaders(extra: Record<string, string> = {}): HeadersInit {
-  if (typeof window === "undefined") return { ...extra };
-  const token = window.localStorage.getItem("token");
+  const token = getToken();
   return {
     ...extra,
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

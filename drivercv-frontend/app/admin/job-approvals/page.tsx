@@ -13,6 +13,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { fetchPendingJobs, approveJob, rejectJob, archiveJob, deleteJob } from "@/lib/api/jobs";
+import { getToken } from "@/lib/session";
 
 type SafeUser = {
   role?: "admin" | "employer" | "advertiser" | "driver" | string;
@@ -30,7 +31,7 @@ type JobItem = {
 function readUserFromStorage(): SafeUser | null {
   try {
     // Token varsa HER ZAMAN token payload'ını esas al (user kaydı bozuk kalmasın)
-    const token = window.localStorage.getItem("token");
+    const token = getToken();
     if (token) {
       const parts = token.split(".");
       if (parts.length >= 2) {

@@ -6,6 +6,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AdminOnly from "@/components/AdminOnly";
+import { getToken } from "@/lib/session";
 
 interface AdvertiserUser {
   _id: string;
@@ -58,7 +59,7 @@ export default function AdminApprovalsPage() {
 
   const fetchApprovals = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         return handleAuthFailure("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
       }
@@ -102,7 +103,7 @@ export default function AdminApprovalsPage() {
 
   const handleApprove = async (userId: string, note?: string) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         return handleAuthFailure("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
       }
@@ -150,7 +151,7 @@ export default function AdminApprovalsPage() {
 
   const handleReject = async (userId: string, reason?: string) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         return handleAuthFailure("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
       }

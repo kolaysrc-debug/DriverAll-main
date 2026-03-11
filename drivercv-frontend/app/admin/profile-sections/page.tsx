@@ -10,6 +10,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getToken } from "@/lib/session";
 
 interface ProfileSection {
   _id: string;
@@ -44,7 +45,7 @@ export default function ProfileSectionsPage() {
   async function loadSections() {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const res = await fetch("/api/admin/profile-sections", {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

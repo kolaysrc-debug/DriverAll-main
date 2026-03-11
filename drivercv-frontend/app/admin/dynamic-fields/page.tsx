@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminOnly from "@/components/AdminOnly";
+import { getToken } from "@/lib/session";
 
 interface DynamicField {
   _id: string;
@@ -58,7 +59,7 @@ export default function DynamicFieldsPage() {
 
   const fetchFields = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         throw new Error("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
       }

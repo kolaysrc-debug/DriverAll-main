@@ -1,4 +1,7 @@
 // PATH: DriverAll-main/drivercv-frontend/lib/api/applications.ts
+
+import { authHeaders } from "@/lib/api/_core";
+
 // ----------------------------------------------------------
 // Applications API (Driver & Employer)
 // - Driver: listMyApplications, applyToJob ✅ EKLENDİ
@@ -53,16 +56,6 @@ export interface DriverApplication {
 const API_BASE_URL =
   (typeof process !== "undefined" && (process as any)?.env?.NEXT_PUBLIC_API_URL) ||
   "";
-
-// ----------------------------------------------------------
-// Auth Header
-// ----------------------------------------------------------
-function authHeaders(): Record<string, string> {
-  if (typeof window === "undefined") return {};
-  const token = window.localStorage.getItem("token");
-  if (!token) return {};
-  return { Authorization: `Bearer ${token}` };
-}
 
 // ----------------------------------------------------------
 // JSON helper

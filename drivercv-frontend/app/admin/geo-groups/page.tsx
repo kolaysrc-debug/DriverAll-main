@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import AdminOnly from "@/components/AdminOnly";
+import { authHeaders } from "@/lib/api/_core";
 
 type Row = {
   _id?: string;
@@ -13,16 +14,6 @@ type Row = {
   sortOrder?: number;
   note?: string;
 };
-
-function token() {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem("token") || "";
-}
-
-function authHeaders(): HeadersInit {
-  const t = token();
-  return t ? { Authorization: `Bearer ${t}` } : {};
-}
 
 export default function AdminGeoGroupsPage() {
   const [country, setCountry] = useState("TR");

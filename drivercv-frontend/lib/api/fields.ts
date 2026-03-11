@@ -1,5 +1,7 @@
 // DriverAll-main/drivercv-frontend/lib/api/fields.ts
 
+import { authHeaders as getAuthHeaders } from "@/lib/api/_core";
+
 export type FieldDefinition = {
   _id: string;
   key: string;
@@ -46,13 +48,6 @@ export type FieldDefinition = {
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "";
-
-function getAuthHeaders(): Record<string, string> {
-  if (typeof window === "undefined") return {};
-  const token = window.localStorage.getItem("token");
-  if (!token) return {};
-  return { Authorization: `Bearer ${token}` };
-}
 
 async function fetchJson(path: string, options: RequestInit = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
