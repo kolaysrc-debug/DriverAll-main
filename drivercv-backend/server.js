@@ -5,6 +5,9 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
+const compression = require("compression");
+const rateLimit = require("express-rate-limit");
 const mongoose = require("mongoose");
 const path = require("path");
 const passport = require("./config/passport");
@@ -21,8 +24,48 @@ const DeletedDefaultField = require("./models/DeletedDefaultField");
 // ----------------------------------------------------------
 // MIDDLEWARE
 // ----------------------------------------------------------
-app.use(cors());
-app.use(express.json());
+
+// Security headers
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+
+// Gzip compression
+app.use(compression());
+
+// CORS — production'da domain kısıtlı, dev'de açık
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || "http://localhost:3000")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+app.use(cors({
+  origin(origin, cb) {
+    // Sunucu-arası (curl vb.) veya izin verilen origin
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    cb(new Error("CORS policy: origin not allowed"));
+  },
+  credentials: true,
+}));
+
+// Rate limiting — genel API (dakikada 200 istek / IP)
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: Number(process.env.RATE_LIMIT_RPM) || 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Çok fazla istek — lütfen biraz bekleyin" },
+});
+app.use("/api", apiLimiter);
+
+// Auth endpoints için daha sıkı limit (dakikada 15)
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: Number(process.env.AUTH_RATE_LIMIT_RPM) || 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Çok fazla giriş denemesi — lütfen bekleyin" },
+});
+app.use("/api/auth", authLimiter);
+
+app.use(express.json({ limit: "2mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api", require("./routes/driverApplications"));
 

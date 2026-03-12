@@ -12,7 +12,9 @@ const router = express.Router();
 
 const PaymentTransaction = require("../models/PaymentTransaction");
 const PackageOrder = require("../models/PackageOrder");
+const User = require("../models/User");
 const { requireAuth, requireRoles } = require("../middleware/auth");
+const { notifyPaymentApproved } = require("../services/emailService");
 
 function safeString(v) {
   return String(v || "").trim();
@@ -102,6 +104,15 @@ router.put("/:id/approve", requireAuth, requireRoles("admin"), async (req, res) 
     p.adminNote = safeString(b.adminNote || p.adminNote || "");
 
     await p.save();
+
+    // Email bildirimi (async, hata durumunda bloklamaz)
+    try {
+      const buyer = await User.findById(order.buyerUserId).lean();
+      if (buyer?.email) {
+        const pkgName = order.packageSnapshot?.name || "";
+        notifyPaymentApproved({ to: buyer.email, userName: buyer.name, orderId: order._id, packageName: pkgName }).catch(() => {});
+      }
+    } catch (_) { /* email failure should not block response */ }
 
     res.json({ success: true, payment: p.toObject(), order: order.toObject() });
   } catch (err) {

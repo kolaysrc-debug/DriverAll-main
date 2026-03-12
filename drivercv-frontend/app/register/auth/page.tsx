@@ -249,6 +249,12 @@ const AuthPageContent: React.FC = () => {
               {loading ? "İşleniyor..." : "Devam et (Giriş / Kayıt)"}
             </button>
 
+            <div className="text-center mt-2">
+              <a href="/reset-password" className="text-xs text-slate-400 hover:text-emerald-400 transition-colors">
+                Şifremi unuttum
+              </a>
+            </div>
+
             {/* Sosyal Giriş Butonları */}
             <div className="mt-6">
               <div className="relative">

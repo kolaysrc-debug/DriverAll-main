@@ -13,8 +13,10 @@ const router = express.Router();
 const Job = require("../models/Job");
 const JobRequest = require("../models/JobRequest");
 const PackageOrder = require("../models/PackageOrder");
+const User = require("../models/User");
 
 const { requireAuth, requireRoles } = require("../middleware/auth");
+const { notifyJobApproved, notifyJobRejected } = require("../services/emailService");
 
 // helpers
 function toUpperList(arr, fallback = ["ALL"]) {
@@ -257,6 +259,14 @@ router.post("/:id/approve", requireAuth, requireRoles("admin"), async (req, res)
     doc.adminNote = String(req.body?.adminNote || "");
     await doc.save();
 
+    // Email bildirimi
+    try {
+      const employer = await User.findById(doc.employerUserId).lean();
+      if (employer?.email) {
+        notifyJobApproved({ to: employer.email, userName: employer.name, jobTitle: job.title }).catch(() => {});
+      }
+    } catch (_) {}
+
     return res.json({ success: true, jobRequest: doc, job });
   } catch (err) {
     console.error("approve job request failed:", err);
@@ -282,6 +292,15 @@ router.post("/:id/reject", requireAuth, requireRoles("admin"), async (req, res) 
     doc.rejectedAt = new Date();
     doc.adminNote = String(req.body?.adminNote || "");
     await doc.save();
+
+    // Email bildirimi
+    try {
+      const employer = await User.findById(doc.employerUserId).lean();
+      const job = await Job.findById(doc.jobId).lean();
+      if (employer?.email) {
+        notifyJobRejected({ to: employer.email, userName: employer.name, jobTitle: job?.title, reason: doc.adminNote }).catch(() => {});
+      }
+    } catch (_) {}
 
     return res.json({ success: true, jobRequest: doc });
   } catch (err) {
