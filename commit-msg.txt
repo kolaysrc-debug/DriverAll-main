@@ -1,17 +1,9 @@
-feat: production readiness - security, email, password reset, SEO, legal pages
+feat: cookie consent, loading states, admin dashboard stats, smoke test pass
 
-- Backend: helmet + compression + rate-limit + CORS whitelist
-- Backend: email service (nodemailer) with templates (payment, job, welcome)
-- Backend: forgot-password / reset-password endpoints (6-digit code, 15min expiry)
-- Backend: email notifications on payment approve, job approve/reject, registration
-- Frontend: not-found.tsx + error.tsx global error pages
-- Frontend: reset-password page (3-step: email -> code -> new password)
-- Frontend: favicon (SVG icon), removed default Next.js placeholder SVGs
-- Frontend: SEO (sitemap.ts, robots.txt, Open Graph + Twitter Card meta)
-- Frontend: KVKK privacy policy + terms of service pages
-- Frontend: site footer with legal links
-- Frontend: "Sifremi unuttum" link on auth page
-- Config: next.config.ts API_BASE from env, poweredByHeader:false, reactStrictMode
-- Config: ENV_EXAMPLE.md with all required environment variables documented
-- User model: passwordResetToken + passwordResetExpires fields
+- Cookie consent banner (KVKK uyumlu, localStorage ile kalıcı)
+- Global + route loading.tsx (admin, employer, driver, jobs)
+- Admin dashboard: live stats endpoint (users, jobs, payments, orders)
+- Admin dashboard: summary cards + son kayıtlar tablosu
+- Backend: /api/admin/dashboard/stats route
+- Smoke test: tüm kritik endpoint'ler ve sayfalar 200 OK
 - TS: zero errors

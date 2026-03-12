@@ -275,6 +275,9 @@ const serviceListingsRoutes = safeRequireAny(["./routes/serviceListings"], "serv
 const adminServiceCategoriesRoutes = safeRequireAny(["./routes/adminServiceCategories"], "adminServiceCategories");
 const publicServiceCategoriesRoutes = safeRequireAny(["./routes/publicServiceCategories"], "publicServiceCategories");
 
+// Dashboard Stats
+const adminDashboardRoutes = safeRequireAny(["./routes/adminDashboard"], "adminDashboard");
+
 // Commit Logs
 const adminCommitLogsRoutes = safeRequireAny(["./routes/adminCommitLogs"], "adminCommitLogs");
 
@@ -405,6 +408,7 @@ if (usersRoutes) app.use("/api/users", usersRoutes);
 if (serviceListingsRoutes) app.use("/api/service-listings", serviceListingsRoutes);
 if (adminServiceCategoriesRoutes) app.use("/api/admin/service-categories", adminServiceCategoriesRoutes);
 if (publicServiceCategoriesRoutes) app.use("/api/public/service-categories", publicServiceCategoriesRoutes);
+if (adminDashboardRoutes) app.use("/api/admin/dashboard", adminDashboardRoutes);
 if (adminCommitLogsRoutes) app.use("/api/admin/commit-logs", adminCommitLogsRoutes);
 
 // ----------------------------------------------------------
