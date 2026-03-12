@@ -6,7 +6,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminOnly from "@/components/AdminOnly";
 import { useRouter } from "next/navigation";
-import { getToken } from "@/lib/session";
+import { getToken, clearSession } from "@/lib/session";
 
 interface Role {
   _id: string;
@@ -69,12 +69,9 @@ export default function DynamicRolesPage() {
   }, []);
 
   const handleAuthFailure = (message?: string) => {
-    try {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-    } catch {}
+    clearSession();
     setError(message || "Oturum geçersiz. Lütfen tekrar giriş yapın.");
-    router.replace("/login");
+    router.replace("/register/auth");
   };
 
   const fetchRoles = async () => {

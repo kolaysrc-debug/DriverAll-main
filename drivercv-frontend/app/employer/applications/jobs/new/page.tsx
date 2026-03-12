@@ -13,6 +13,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import EmployerOnly from "@/components/EmployerOnly";
 import { createJob } from "@/lib/api/jobs";
 import { useRouter } from "next/navigation";
+import { authHeaders } from "@/lib/api/_core";
+import { getToken } from "@/lib/session";
 
 type FieldDefinition = {
   _id: string;
@@ -31,15 +33,6 @@ type FieldDefinition = {
 
 type FieldGroupNode = { key: string; label: string; active?: boolean; sortOrder?: number; level?: number };
 type FieldGroup = { groupKey: string; groupLabel: string; nodes: FieldGroupNode[]; country?: string };
-
-function getToken(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("token") || "";
-}
-function authHeaders(): HeadersInit {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 
 export default function EmployerNewJobPage() {
   const router = useRouter();

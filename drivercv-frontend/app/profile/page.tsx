@@ -2,19 +2,19 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { getToken, getUser } from "@/lib/session";
 
 export default function ProfilePage() {
   const router = useRouter();
 
   useEffect(() => {
     try {
-      const token = localStorage.getItem("token");
-      const rawUser = localStorage.getItem("user");
-      const user = rawUser ? JSON.parse(rawUser) : null;
+      const token = getToken();
+      const user = getUser();
       const role = String(user?.role || "").trim().toLowerCase();
 
       if (!token || !user) {
-        router.replace("/login");
+        router.replace("/register/auth");
         return;
       }
 
@@ -35,7 +35,7 @@ export default function ProfilePage() {
 
       router.replace("/profile/cv");
     } catch {
-      router.replace("/login");
+      router.replace("/register/auth");
     }
   }, [router]);
 

@@ -3,18 +3,12 @@
 // PATH: DriverAll-main/drivercv-frontend/app/packages/page.tsx
 
 import React, { useEffect, useState } from "react";
-
-function getToken(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("token") || "";
-}
-
-function authHeaders(): HeadersInit {
-  const t = getToken();
-  return t ? { Authorization: `Bearer ${t}` } : {};
-}
+import { useRouter } from "next/navigation";
+import { authHeaders } from "@/lib/api/_core";
+import { getToken } from "@/lib/session";
 
 export default function PackagesPage() {
+  const router = useRouter();
   const [type, setType] = useState<"JOB" | "AD">("JOB");
   const [country, setCountry] = useState("TR");
 
@@ -41,7 +35,7 @@ export default function PackagesPage() {
   async function buy(id: string) {
     const t = getToken();
     if (!t) {
-      alert("Satın almak için giriş yapmalısınız.");
+      router.push("/register/auth");
       return;
     }
 
@@ -55,7 +49,8 @@ export default function PackagesPage() {
       return;
     }
 
-    alert("Order oluşturuldu. /orders sayfasından görebilirsiniz.");
+    alert("Order oluşturuldu! Ödeme bilgisi gönderebilirsiniz.");
+    router.push("/employer/dashboard");
   }
 
   useEffect(() => {
@@ -124,7 +119,7 @@ export default function PackagesPage() {
                       {p.type} • {p.country} • {p.price} {p.currency}
                     </div>
                     <div className="text-xs text-slate-400 mt-1">
-                      credits: job={p?.credits?.jobCount || 0} ad={p?.credits?.adCount || 0}
+                      Kredi: İlan={p?.credits?.jobPostCount || p?.credits?.jobCount || 0} Reklam={p?.credits?.adCount || 0} CV={p?.credits?.cvViewCount || 0}
                     </div>
                     {p.description ? <div className="text-xs text-slate-500 mt-2">{p.description}</div> : null}
                   </div>

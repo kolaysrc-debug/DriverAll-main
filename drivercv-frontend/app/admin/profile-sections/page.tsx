@@ -10,7 +10,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getToken } from "@/lib/session";
+import { getToken, clearSession } from "@/lib/session";
 
 interface ProfileSection {
   _id: string;
@@ -30,12 +30,9 @@ export default function ProfileSectionsPage() {
   const [error, setError] = useState<string | null>(null);
 
   function handleAuthFailure(message?: string) {
-    try {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-    } catch {}
+    clearSession();
     setError(message || "Oturum geçersiz. Lütfen tekrar giriş yapın.");
-    router.replace("/login");
+    router.replace("/register/auth");
   }
 
   useEffect(() => {

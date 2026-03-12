@@ -6,7 +6,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminOnly from "@/components/AdminOnly";
 import { useRouter } from "next/navigation";
-import { getToken } from "@/lib/session";
+import { getToken, clearSession } from "@/lib/session";
 
 interface Branch {
   _id: string;
@@ -66,13 +66,10 @@ export default function BranchesPage() {
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   function handleAuthFailure(message: string) {
-    try {
-      window.localStorage.removeItem("token");
-      window.localStorage.removeItem("user");
-      window.dispatchEvent(new Event("driverall-auth-changed"));
-    } catch {}
+    clearSession();
+    window.dispatchEvent(new Event("driverall-auth-changed"));
     setError(message || "Oturum geçersiz. Lütfen tekrar giriş yapın.");
-    router.replace("/login");
+    router.replace("/register/auth");
   }
 
   useEffect(() => {

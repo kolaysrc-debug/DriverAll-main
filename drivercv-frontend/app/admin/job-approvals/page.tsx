@@ -13,11 +13,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { fetchPendingJobs, approveJob, rejectJob, archiveJob, deleteJob } from "@/lib/api/jobs";
-import { getToken } from "@/lib/session";
-
-type SafeUser = {
-  role?: "admin" | "employer" | "advertiser" | "driver" | string;
-};
+import { getUser, clearSession } from "@/lib/session";
 
 type JobItem = {
   _id: string;
@@ -28,47 +24,6 @@ type JobItem = {
   createdAt?: string;
 };
 
-function readUserFromStorage(): SafeUser | null {
-  try {
-    // Token varsa HER ZAMAN token payload'ını esas al (user kaydı bozuk kalmasın)
-    const token = getToken();
-    if (token) {
-      const parts = token.split(".");
-      if (parts.length >= 2) {
-        const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-        const json = decodeURIComponent(
-          atob(b64)
-            .split("")
-            .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-            .join("")
-        );
-        const payload = JSON.parse(json);
-
-        const userFromToken: any = {
-          _id: payload.userId,
-          email: payload.email,
-          role: payload.role,
-        };
-
-        if (userFromToken.role) {
-          window.localStorage.setItem("user", JSON.stringify(userFromToken));
-          return userFromToken as SafeUser;
-        }
-      }
-    }
-
-    // Token yoksa user'a düş
-    const raw = window.localStorage.getItem("user");
-    if (!raw) return null;
-
-    const u = JSON.parse(raw);
-    if (u?.role) return u as SafeUser;
-
-    return null;
-  } catch {
-    return null;
-  }
-}
 
 export default function AdminJobApprovalsPage() {
   const router = useRouter();
@@ -80,13 +35,10 @@ export default function AdminJobApprovalsPage() {
   const [q, setQ] = useState("");
 
   function handleAuthFailure(message: string) {
-    try {
-      window.localStorage.removeItem("token");
-      window.localStorage.removeItem("user");
-      window.dispatchEvent(new Event("driverall-auth-changed"));
-    } catch {}
+    clearSession();
+    window.dispatchEvent(new Event("driverall-auth-changed"));
     setErr(message || "Oturum geçersiz. Lütfen tekrar giriş yapın.");
-    router.replace("/login");
+    router.replace("/register/auth");
   }
 
   function isAuthError(e: any) {
@@ -95,9 +47,9 @@ export default function AdminJobApprovalsPage() {
   }
 
   useEffect(() => {
-    const u = readUserFromStorage();
+    const u = getUser();
     if (!u?.role) {
-      router.replace("/login");
+      router.replace("/register/auth");
       return;
     }
     if (u.role !== "admin") {

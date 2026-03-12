@@ -3,20 +3,8 @@
 // PATH: DriverAll-main/drivercv-frontend/app/orders/page.tsx
 
 import React, { useEffect, useMemo, useState } from "react";
-
-function getToken(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("token") || "";
-}
-
-function authHeaders(): HeadersInit {
-  const t = getToken();
-  return t ? { Authorization: `Bearer ${t}` } : {};
-}
-
-function jsonHeaders(): HeadersInit {
-  return { "Content-Type": "application/json", ...authHeaders() };
-}
+import { authHeaders } from "@/lib/api/_core";
+import { getToken, getUser } from "@/lib/session";
 
 export default function OrdersPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -28,13 +16,8 @@ export default function OrdersPage() {
   const [busyOrderId, setBusyOrderId] = useState<string>("");
 
   useEffect(() => {
-    try {
-      const rawUser = typeof window !== "undefined" ? window.localStorage.getItem("user") : null;
-      const user = rawUser ? JSON.parse(rawUser) : null;
-      setRole(String(user?.role || "").trim().toLowerCase());
-    } catch {
-      setRole("");
-    }
+    const u = getUser();
+    setRole(String(u?.role || "").trim().toLowerCase());
   }, []);
 
   async function load() {
@@ -110,7 +93,7 @@ export default function OrdersPage() {
       const idempotencyKey = `manual_eft:${orderId}`;
       const res = await fetch(`/api/payments/orders/${encodeURIComponent(orderId)}/manual-eft`, {
         method: "POST",
-        headers: { ...jsonHeaders(), "Idempotency-Key": idempotencyKey },
+        headers: { "Content-Type": "application/json", ...authHeaders(), "Idempotency-Key": idempotencyKey } as any,
         body: JSON.stringify({ providerRef, idempotencyKey }),
       });
       const data = await res.json().catch(() => ({}));

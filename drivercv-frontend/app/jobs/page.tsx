@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { fetchJobFilters, fetchPublicJobs, fetchLocationsList } from "@/lib/api/publicJobs";
 import { listMyApplications } from "@/lib/api/applications";
+import { getToken, getUser } from "@/lib/session";
 import FilterDrawer from "@/components/FilterDrawer";
 import FloatingActionButton from "@/components/FloatingActionButton";
 
@@ -127,14 +128,9 @@ function JobsPageContent() {
 
     (async () => {
       if (typeof window === "undefined") return;
-      const token = window.localStorage.getItem("token");
-      const userRaw = window.localStorage.getItem("user");
-      let role = "";
-      try {
-        role = String(userRaw ? JSON.parse(userRaw)?.role : "");
-      } catch {
-        role = "";
-      }
+      const token = getToken();
+      const user = getUser();
+      const role = String(user?.role || "");
 
       if (!token || role !== "driver") {
         setAppliedJobIds({});

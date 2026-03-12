@@ -10,6 +10,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import AdvertiserOnly from "@/components/AdvertiserOnly";
+import { authHeaders } from "@/lib/api/_core";
 
 type Package = {
   _id: string;
@@ -25,16 +26,6 @@ type Package = {
   };
   active?: boolean;
 };
-
-function token() {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem("token") || "";
-}
-
-function authHeaders(): HeadersInit {
-  const t = token();
-  return t ? { Authorization: `Bearer ${t}` } : {};
-}
 
 export default function AdvertiserNewRequestPage() {
   const [country, setCountry] = useState("TR");

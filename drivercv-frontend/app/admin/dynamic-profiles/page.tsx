@@ -6,7 +6,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import AdminOnly from "@/components/AdminOnly";
 import { useRouter } from "next/navigation";
-import { getToken } from "@/lib/session";
+import { getToken, clearSession } from "@/lib/session";
 
 type RoleItem = {
   _id: string;
@@ -95,12 +95,8 @@ export default function DynamicProfilesPage() {
   }, []);
 
   const handleAuthFailure = () => {
-    try {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-    } finally {
-      router.replace("/login");
-    }
+    clearSession();
+    router.replace("/register/auth");
   };
 
   const isAuthError = (err: unknown) => {

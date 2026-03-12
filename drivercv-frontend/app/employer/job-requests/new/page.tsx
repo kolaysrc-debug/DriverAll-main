@@ -12,6 +12,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import EmployerOnly from "@/components/EmployerOnly";
 import Link from "next/link";
+import { authHeaders } from "@/lib/api/_core";
+import { getToken } from "@/lib/session";
 
 type JobRow = {
   _id: string;
@@ -39,15 +41,6 @@ type PackageOrder = {
     cvSaveCount?: number;
   };
 };
-
-function getToken(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem("token") || "";
-}
-function authHeaders(): HeadersInit {
-  const t = getToken();
-  return t ? { Authorization: `Bearer ${t}` } : {};
-}
 
 export default function EmployerJobRequestNewPage() {
   const [loading, setLoading] = useState(true);
@@ -262,8 +255,8 @@ export default function EmployerJobRequestNewPage() {
                         /packages
                       </Link>{" "}
                       üzerinden paket seçip sipariş oluşturun; EFT/Havale yaptıysanız
-                      <Link className="text-sky-300 hover:underline" href="/orders">
-                        {" "}/orders
+                      <Link className="text-sky-300 hover:underline" href="/employer/orders">
+                        {" "}/employer/orders
                       </Link>{" "}
                       sayfasından &ldquo;EFT/Havale Bildir&rdquo; gönderin. Admin onaylayınca burada görünecek.
                     </div>

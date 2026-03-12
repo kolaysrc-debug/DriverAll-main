@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 import AdminOnly from "@/components/AdminOnly";
 import { approveJobRequest, fetchAdminJobRequests, rejectJobRequest } from "@/lib/api/jobRequests";
 import { useRouter } from "next/navigation";
+import { clearSession } from "@/lib/session";
 
 type Row = {
   _id: string;
@@ -26,13 +27,10 @@ export default function AdminJobRequestsPage() {
   const [err, setErr] = useState<string | null>(null);
 
   function handleAuthFailure(message: string) {
-    try {
-      window.localStorage.removeItem("token");
-      window.localStorage.removeItem("user");
-      window.dispatchEvent(new Event("driverall-auth-changed"));
-    } catch {}
+    clearSession();
+    window.dispatchEvent(new Event("driverall-auth-changed"));
     setErr(message || "Oturum geçersiz. Lütfen tekrar giriş yapın.");
-    router.replace("/login");
+    router.replace("/register/auth");
   }
 
   function isAuthError(e: any) {

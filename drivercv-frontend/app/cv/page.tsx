@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getUser } from "@/lib/session";
 
 export default function CvPage() {
   const router = useRouter();
@@ -9,8 +10,7 @@ export default function CvPage() {
 
   useEffect(() => {
     try {
-      const rawUser = typeof window !== "undefined" ? window.localStorage.getItem("user") : null;
-      const user = rawUser ? JSON.parse(rawUser) : null;
+      const user = getUser();
       const role = String(user?.role || "").trim().toLowerCase();
 
       if (role && role !== "driver" && role !== "admin") {

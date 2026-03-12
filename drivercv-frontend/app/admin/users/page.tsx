@@ -14,6 +14,7 @@ import {
   deleteDriver,
   DriverUser,
 } from "@/lib/api/drivers";
+import { getUser, clearSession } from "@/lib/session";
 
 type LoggedInUser = {
   _id?: string;
@@ -38,13 +39,10 @@ export default function AdminUsersPage() {
   const [subRolesLoading, setSubRolesLoading] = useState(false);
 
   function handleAuthFailure(message: string) {
-    try {
-      window.localStorage.removeItem("token");
-      window.localStorage.removeItem("user");
-      window.dispatchEvent(new Event("driverall-auth-changed"));
-    } catch {}
+    clearSession();
+    window.dispatchEvent(new Event("driverall-auth-changed"));
     setError(message || "Oturum geçersiz. Lütfen tekrar giriş yapın.");
-    router.replace("/login");
+    router.replace("/register/auth");
   }
 
   function isAuthError(e: any) {
@@ -102,17 +100,8 @@ export default function AdminUsersPage() {
 
   // Kullanıcı + listeyi yükle
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const raw = window.localStorage.getItem("user");
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-          setCurrentUser(parsed);
-        } catch {
-          // geçersiz JSON'u boşver
-        }
-      }
-    }
+    const u = getUser();
+    if (u) setCurrentUser(u as any);
 
     loadUsers();
     loadSubRoles();

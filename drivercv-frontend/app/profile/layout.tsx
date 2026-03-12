@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import RoleGate from "@/components/RoleGate";
+import { getUser } from "@/lib/session";
 
 type MenuItem = {
   href: string;
@@ -12,13 +13,8 @@ type MenuItem = {
 };
 
 function readRole(): string {
-  try {
-    const raw = localStorage.getItem("user");
-    const user = raw ? JSON.parse(raw) : null;
-    return String(user?.role || "").trim().toLowerCase();
-  } catch {
-    return "";
-  }
+  const user = getUser();
+  return String(user?.role || "").trim().toLowerCase();
 }
 
 export default function ProfileLayout({ children }: { children: React.ReactNode }) {
