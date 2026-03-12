@@ -805,7 +805,7 @@ function AdminFieldGroupsInner() {
                   <label className="mb-1 block text-xs font-medium text-slate-400">Grup adı</label>
                   <input
                     className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-50 outline-none focus:border-sky-500"
-                    value={editingGroup.groupLabel}
+                    value={editingGroup.groupLabel || ""}
                     onChange={(e) => setEditingGroup({ ...editingGroup, groupLabel: e.target.value })}
                   />
                 </div>
