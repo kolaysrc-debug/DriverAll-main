@@ -692,7 +692,7 @@ export default function DynamicRolesPage() {
                     <label className="block text-sm font-medium text-slate-300 mb-1">Rol Adı</label>
                     <input
                       type="text"
-                      value={editingRole.name}
+                      value={editingRole.name || ""}
                       readOnly
                       className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
                     />
@@ -702,7 +702,7 @@ export default function DynamicRolesPage() {
                     <label className="block text-sm font-medium text-slate-300 mb-1">Görünen Ad</label>
                     <input
                       type="text"
-                      value={editingRole.displayName}
+                      value={editingRole.displayName || ""}
                       onChange={(e) => setEditingRole({ ...editingRole, displayName: e.target.value })}
                       className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
                     />
@@ -711,7 +711,7 @@ export default function DynamicRolesPage() {
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-1">Açıklama</label>
                     <textarea
-                      value={editingRole.description}
+                      value={editingRole.description || ""}
                       onChange={(e) => setEditingRole({ ...editingRole, description: e.target.value })}
                       className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
                       rows={3}
@@ -723,7 +723,7 @@ export default function DynamicRolesPage() {
                       <label className="block text-sm font-medium text-slate-300 mb-1">Kategori</label>
                       <input
                         type="text"
-                        value={editingRole.category}
+                        value={editingRole.category || ""}
                         readOnly
                         className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
                       />
@@ -732,7 +732,7 @@ export default function DynamicRolesPage() {
                       <label className="block text-sm font-medium text-slate-300 mb-1">Seviye</label>
                       <input
                         type="number"
-                        value={editingRole.level}
+                        value={editingRole.level ?? 0}
                         readOnly
                         className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
                       />
@@ -744,7 +744,7 @@ export default function DynamicRolesPage() {
                       <label className="block text-sm font-medium text-slate-300 mb-1">İkon</label>
                       <input
                         type="text"
-                        value={editingRole.icon}
+                        value={editingRole.icon || ""}
                         onChange={(e) => setEditingRole({ ...editingRole, icon: e.target.value })}
                         className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
                       />
@@ -753,7 +753,7 @@ export default function DynamicRolesPage() {
                       <label className="block text-sm font-medium text-slate-300 mb-1">Renk</label>
                       <input
                         type="text"
-                        value={editingRole.color}
+                        value={editingRole.color || ""}
                         onChange={(e) => setEditingRole({ ...editingRole, color: e.target.value })}
                         className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-300"
                       />

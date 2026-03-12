@@ -1,9 +1,0 @@
-feat: cookie consent, loading states, admin dashboard stats, smoke test pass
-
-- Cookie consent banner (KVKK uyumlu, localStorage ile kalıcı)
-- Global + route loading.tsx (admin, employer, driver, jobs)
-- Admin dashboard: live stats endpoint (users, jobs, payments, orders)
-- Admin dashboard: summary cards + son kayıtlar tablosu
-- Backend: /api/admin/dashboard/stats route
-- Smoke test: tüm kritik endpoint'ler ve sayfalar 200 OK
-- TS: zero errors
