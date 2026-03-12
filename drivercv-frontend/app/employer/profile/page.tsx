@@ -78,9 +78,8 @@ export default function EmployerProfilePage() {
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
 
-  // Alt roller
-  const [availableSubRoles, setAvailableSubRoles] = useState<{ key: string; label: string; description?: string }[]>([]);
-  const [selectedSubRoles, setSelectedSubRoles] = useState<string[]>([]);
+  // Dirty state: load sonrası orijinal değerler
+  const [initial, setInitial] = useState<Record<string, string>>({});
 
   const headersAuth = useMemo(() => coreAuthHeaders(), []);
 
@@ -126,15 +125,23 @@ export default function EmployerProfilePage() {
       setContactName(String(dyn.contactName || "").trim());
       setContactEmail(String(dyn.contactEmail || p.email || "").trim());
 
-      // Alt rolleri yükle
-      setSelectedSubRoles(Array.isArray(p.subRoles) ? p.subRoles : []);
-      try {
-        const srRes = await fetch("/api/public/roles/subroles?category=employer");
-        const srData = await srRes.json();
-        if (srRes.ok && Array.isArray(srData.subRoles)) {
-          setAvailableSubRoles(srData.subRoles);
-        }
-      } catch { /* alt roller opsiyonel */ }
+      // Orijinal değerleri sakla (dirty kontrolü için)
+      setInitial({
+        companyName: cn,
+        brandName: String(dyn.brandName || "").trim(),
+        taxNumber: String(dyn.taxNumber || "").trim(),
+        sector: String(dyn.sector || "").trim(),
+        website: String(dyn.website || "").trim(),
+        phone: String(p.phone || dyn.phone || "").trim(),
+        country: normalizeCountryCode(String(p.country || dyn.country || "TR"), "TR"),
+        stateCode: String((p.location || dyn.location || {}).cityCode || "").trim(),
+        districtCode: String((p.location || dyn.location || {}).districtCode || "").trim(),
+        address: String(dyn.address || "").trim(),
+        aboutCompany: String(p.about || dyn.aboutCompany || "").trim(),
+        contactName: String(dyn.contactName || "").trim(),
+        contactEmail: String(dyn.contactEmail || p.email || "").trim(),
+      });
+
     } catch (e: any) {
       setErr(e?.message || "Profil yüklenirken hata oluştu.");
     } finally {
@@ -249,8 +256,6 @@ export default function EmployerProfilePage() {
 
         about: aboutCompany.trim(),
 
-        subRoles: selectedSubRoles,
-
         dynamicValues: {
           ...(profile?.dynamicValues || {}),
           companyName: companyName.trim(),
@@ -290,6 +295,23 @@ export default function EmployerProfilePage() {
       const p2: Profile = j.profile || body;
       setProfile(p2);
       setOk("Firma profili kaydedildi.");
+
+      // Kayıt başarılı → initial'ı güncelle (dirty = false olsun)
+      setInitial({
+        companyName: companyName.trim(),
+        brandName: brandName.trim(),
+        taxNumber: taxNumber.trim(),
+        sector: sector.trim(),
+        website: website.trim(),
+        phone: phone.trim(),
+        country: effectiveCountry,
+        stateCode: stateCode || "",
+        districtCode: districtCode || "",
+        address: address.trim(),
+        aboutCompany: aboutCompany.trim(),
+        contactName: contactName.trim(),
+        contactEmail: contactEmail.trim(),
+      });
     } catch (e: any) {
       setErr(e?.message || "Profil kaydedilemedi.");
     } finally {
@@ -303,6 +325,26 @@ export default function EmployerProfilePage() {
     const t = setTimeout(() => setOk(null), 3000);
     return () => clearTimeout(t);
   }, [ok]);
+
+  // Dirty kontrolü: mevcut değerler ile orijinal karşılaştır
+  const isDirty = useMemo(() => {
+    if (!initial || Object.keys(initial).length === 0) return false;
+    return (
+      companyName !== initial.companyName ||
+      brandName !== initial.brandName ||
+      taxNumber !== initial.taxNumber ||
+      sector !== initial.sector ||
+      website !== initial.website ||
+      phone !== initial.phone ||
+      country !== initial.country ||
+      stateCode !== initial.stateCode ||
+      districtCode !== initial.districtCode ||
+      address !== initial.address ||
+      aboutCompany !== initial.aboutCompany ||
+      contactName !== initial.contactName ||
+      contactEmail !== initial.contactEmail
+    );
+  }, [companyName, brandName, taxNumber, sector, website, phone, country, stateCode, districtCode, address, aboutCompany, contactName, contactEmail, initial]);
 
   const inputCls = "mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-emerald-600/50 focus:ring-1 focus:ring-emerald-600/30 transition-colors";
   const labelCls = "text-xs text-slate-400 font-medium";
@@ -414,37 +456,27 @@ export default function EmployerProfilePage() {
                 </div>
               </div>
 
-              {/* Sağ: Yetkili + Alt Roller + Kaydet */}
+              {/* Sağ: Ekip + Yetkili + Kaydet */}
               <div className="md:col-span-5 space-y-4">
-                {/* Alt Roller */}
-                {availableSubRoles.length > 0 && (
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-3">
-                    <div className="text-sm font-semibold text-slate-100">Firma Türü / Alt Rol</div>
-                    <p className="text-[11px] text-slate-400">Firmanızın hizmet alanını seçin (birden fazla seçilebilir)</p>
-                    <div className="space-y-2">
-                      {availableSubRoles.map((sr) => (
-                        <label key={sr.key} className="flex items-start gap-2.5 cursor-pointer group">
-                          <input
-                            type="checkbox"
-                            checked={selectedSubRoles.includes(sr.key)}
-                            onChange={() => {
-                              setSelectedSubRoles((prev) =>
-                                prev.includes(sr.key)
-                                  ? prev.filter((k) => k !== sr.key)
-                                  : [...prev, sr.key]
-                              );
-                            }}
-                            className="mt-0.5 h-4 w-4 rounded border-slate-600 bg-slate-950 text-emerald-500 focus:ring-emerald-600/30"
-                          />
-                          <div>
-                            <div className="text-sm text-slate-200 group-hover:text-emerald-300 transition-colors">{sr.label}</div>
-                            {sr.description && <div className="text-[11px] text-slate-500">{sr.description}</div>}
-                          </div>
-                        </label>
-                      ))}
-                    </div>
+                {/* Ekip & Şube Yönetimi */}
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-3">
+                  <div className="text-sm font-semibold text-slate-100">Ekip & Şube Yönetimi</div>
+                  <p className="text-[11px] text-slate-400">Alt kullanıcılarınızı ve şubelerinizi buradan yönetin</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link
+                      href="/employer/team"
+                      className="rounded-xl border border-teal-600/30 bg-teal-950/20 px-3 py-3 text-center text-xs font-medium text-teal-300 hover:bg-teal-900/30 transition-colors"
+                    >
+                      👥 Ekibim
+                    </Link>
+                    <Link
+                      href="/employer/branches"
+                      className="rounded-xl border border-rose-600/30 bg-rose-950/20 px-3 py-3 text-center text-xs font-medium text-rose-300 hover:bg-rose-900/30 transition-colors"
+                    >
+                      📍 Şubeler
+                    </Link>
                   </div>
-                )}
+                </div>
 
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-4">
                   <div className="text-sm font-semibold text-slate-100">Yetkili / İletişim</div>
@@ -460,10 +492,14 @@ export default function EmployerProfilePage() {
                   </div>
 
                   <button
-                    disabled={saving}
-                    className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50 transition-colors"
+                    disabled={saving || !isDirty}
+                    className={`w-full rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+                      isDirty
+                        ? "bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50"
+                        : "bg-slate-700 text-slate-400 cursor-not-allowed"
+                    }`}
                   >
-                    {saving ? "Kaydediliyor..." : "Kaydet"}
+                    {saving ? "Kaydediliyor..." : isDirty ? "Kaydet" : "Değişiklik yok"}
                   </button>
 
                   <div className="text-[11px] text-slate-500">

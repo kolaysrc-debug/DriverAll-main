@@ -8,6 +8,21 @@ const bcrypt = require("bcryptjs");
 
 const requireAuth = require("../middleware/auth");
 
+const mongoose = require("mongoose");
+
+// Role'u ObjectId veya string name ile bul
+async function resolveRole(roleValue) {
+  if (!roleValue) return null;
+  // Geçerli ObjectId mi?
+  if (mongoose.Types.ObjectId.isValid(roleValue) && String(new mongoose.Types.ObjectId(roleValue)) === String(roleValue)) {
+    return Role.findById(roleValue);
+  }
+  // String name ile ara, bulamazsa displayName ile dene
+  const byName = await Role.findOne({ name: roleValue });
+  if (byName) return byName;
+  return Role.findOne({ displayName: roleValue });
+}
+
 function requireNotDriver(req, res, next) {
   const role = req.user?.role;
   if (!role) return res.status(401).json({ success: false, message: "Giriş gerekli" });
@@ -78,7 +93,7 @@ router.post("/", requireAuth, requireNotDriver, async (req, res) => {
       return res.status(400).json({ success: false, message: "Bu e-posta adresi zaten kullanımda" });
     }
 
-    const roleData = await Role.findById(role);
+    const roleData = await resolveRole(role);
     if (!roleData) {
       return res.status(400).json({ success: false, message: "Geçersiz rol" });
     }
@@ -102,7 +117,7 @@ router.post("/", requireAuth, requireNotDriver, async (req, res) => {
       email: email.trim().toLowerCase(),
       phone: phone?.trim() || "",
       passwordHash,
-      role,
+      role: roleData._id,
       assignedBranches: assignedBranches || [],
       assignedUnits: assignedUnits || [],
       permissions: permissions || [],
@@ -145,6 +160,155 @@ router.post("/", requireAuth, requireNotDriver, async (req, res) => {
   } catch (err) {
     console.error("Owner subuser create error:", err);
     return res.status(500).json({ success: false, message: "Alt kullanıcı oluşturulamadı" });
+  }
+});
+
+// ----------------------------------------------------------
+// PUT /api/owner/subusers/:id - Owner alt kullanıcı güncelle
+// ----------------------------------------------------------
+router.put("/:id", requireAuth, requireNotDriver, async (req, res) => {
+  try {
+    const subuser = await SubUser.findById(req.params.id);
+    if (!subuser) {
+      return res.status(404).json({ success: false, message: "Alt kullanıcı bulunamadı" });
+    }
+
+    // Sahiplik kontrolü
+    if (String(subuser.parentUser) !== String(req.user._id) && req.user.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Bu alt kullanıcıyı düzenleme yetkiniz yok" });
+    }
+
+    const {
+      name, email, phone, password, role,
+      assignedBranches, assignedUnits, permissions,
+      locationRestrictions, approvalSettings, profile, contact,
+    } = req.body;
+
+    if (name != null) subuser.name = name.trim();
+    if (phone != null) subuser.phone = phone.trim();
+
+    // E-posta değişikliğinde benzersizlik kontrolü
+    if (email != null && email.trim().toLowerCase() !== subuser.email) {
+      const dup = await SubUser.findOne({ email: email.trim().toLowerCase(), _id: { $ne: subuser._id } });
+      if (dup) return res.status(400).json({ success: false, message: "Bu e-posta adresi zaten kullanımda" });
+      subuser.email = email.trim().toLowerCase();
+    }
+
+    // Şifre değişikliği
+    if (password && password.length >= 6) {
+      const salt = await bcrypt.genSalt(12);
+      subuser.passwordHash = await bcrypt.hash(password, salt);
+      subuser.status.passwordResetRequired = false;
+    }
+
+    // Rol değişikliği
+    if (role) {
+      const roleData = await resolveRole(role);
+      if (!roleData) return res.status(400).json({ success: false, message: "Geçersiz rol" });
+      subuser.role = roleData._id;
+    }
+
+    // Şube ataması
+    if (assignedBranches != null) {
+      if (assignedBranches.length > 0) {
+        const branchIds = assignedBranches.map((ab) => ab.branch);
+        const branches = await Branch.find({ _id: { $in: branchIds } });
+        if (branches.length !== branchIds.length) {
+          return res.status(400).json({ success: false, message: "Bazı şubeler bulunamadı" });
+        }
+      }
+      subuser.assignedBranches = assignedBranches;
+    }
+
+    if (assignedUnits != null) subuser.assignedUnits = assignedUnits;
+    if (permissions != null) subuser.permissions = permissions;
+    if (locationRestrictions != null) subuser.locationRestrictions = locationRestrictions;
+    if (approvalSettings != null) {
+      subuser.approvalSettings = {
+        ...subuser.approvalSettings,
+        ...approvalSettings,
+      };
+    }
+    if (profile != null) subuser.profile = { ...subuser.profile, ...profile };
+    if (contact != null) subuser.contact = { ...subuser.contact, ...contact };
+
+    subuser.metadata.updatedBy = req.user._id;
+
+    subuser.addActivityLog("updated", "Alt kullanıcı owner tarafından güncellendi", {
+      ipAddress: req.ip,
+      userAgent: req.get("User-Agent"),
+    });
+
+    await subuser.save();
+
+    await subuser.populate([
+      { path: "parentUser" },
+      { path: "role" },
+      { path: "assignedBranches.branch" },
+    ]);
+
+    return res.json({ success: true, message: "Alt kullanıcı güncellendi", subuser });
+  } catch (err) {
+    console.error("Owner subuser update error:", err);
+    return res.status(500).json({ success: false, message: "Alt kullanıcı güncellenemedi" });
+  }
+});
+
+// ----------------------------------------------------------
+// DELETE /api/owner/subusers/:id - Owner alt kullanıcı sil
+// ----------------------------------------------------------
+router.delete("/:id", requireAuth, requireNotDriver, async (req, res) => {
+  try {
+    const subuser = await SubUser.findById(req.params.id);
+    if (!subuser) {
+      return res.status(404).json({ success: false, message: "Alt kullanıcı bulunamadı" });
+    }
+
+    // Sahiplik kontrolü
+    if (String(subuser.parentUser) !== String(req.user._id) && req.user.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Bu alt kullanıcıyı silme yetkiniz yok" });
+    }
+
+    await SubUser.findByIdAndDelete(req.params.id);
+
+    return res.json({ success: true, message: "Alt kullanıcı silindi" });
+  } catch (err) {
+    console.error("Owner subuser delete error:", err);
+    return res.status(500).json({ success: false, message: "Alt kullanıcı silinemedi" });
+  }
+});
+
+// ----------------------------------------------------------
+// PUT /api/owner/subusers/:id/toggle-active - Aktif/pasif
+// ----------------------------------------------------------
+router.put("/:id/toggle-active", requireAuth, requireNotDriver, async (req, res) => {
+  try {
+    const subuser = await SubUser.findById(req.params.id);
+    if (!subuser) {
+      return res.status(404).json({ success: false, message: "Alt kullanıcı bulunamadı" });
+    }
+
+    if (String(subuser.parentUser) !== String(req.user._id) && req.user.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Yetkiniz yok" });
+    }
+
+    subuser.status.isActive = !subuser.status.isActive;
+    subuser.addActivityLog(
+      subuser.status.isActive ? "activated" : "deactivated",
+      `Alt kullanıcı ${subuser.status.isActive ? "aktif" : "pasif"} edildi`,
+      { ipAddress: req.ip }
+    );
+
+    await subuser.save();
+
+    return res.json({
+      success: true,
+      message: `Alt kullanıcı ${subuser.status.isActive ? "aktif" : "pasif"} edildi`,
+      subuser,
+    });
+  } catch (err) {
+    console.error("Owner subuser toggle error:", err);
+    return res.status(500).json({ success: false, message: "Durum değiştirilemedi" });
   }
 });
 

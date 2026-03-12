@@ -404,13 +404,7 @@ function HomePageContent() {
     setLoginMethod("password");
   }, [mode]);
 
-  const loggedInRole = useMemo<UserRole>(() => normalizeRole(sessionUser?.role), [sessionUser]);
-
-  // Giriş yapılmışsa dashboard'a yönlendir
-  useEffect(() => {
-    if (!sessionToken) return;
-    router.replace("/dashboard");
-  }, [router, sessionToken]);
+  // Ana sayfa artık tüm kullanıcılar için aynı landing page'i gösterir
 
   // Featured jobs (logged-out landing) - Tier bazlı
   useEffect(() => {
@@ -577,212 +571,30 @@ function HomePageContent() {
   }
 
   // ----------------------------------------------------------
-  // Logged-in: dashboard'a yönlendirilir (yukarıdaki useEffect)
-  // ----------------------------------------------------------
-  if (sessionToken) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-50 px-4 py-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-6">
-            <div className="text-xs text-slate-300">Ana Sayfa</div>
-            <h1 className="text-2xl font-bold">
-              Hoş geldiniz{sessionUser?.name ? `, ${sessionUser.name}` : ""}
-            </h1>
-            <div className="mt-1 text-sm text-slate-300">
-              Rol: <span className="font-semibold text-slate-100">{loggedInRole}</span>
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-12">
-            <div className="md:col-span-8">
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5">
-                <div className="mb-3 text-sm font-semibold text-slate-100">Hızlı İşlemler</div>
-
-                {loggedInRole === "driver" && (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Link
-                      href="/jobs"
-                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 hover:bg-slate-900/40"
-                    >
-                      <div className="text-sm font-semibold">İlanları Gör</div>
-                      <div className="mt-1 text-xs text-slate-400">Filtrele, incele, başvur</div>
-                    </Link>
-
-                    <Link
-                      href="/driver/applications"
-                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 hover:bg-slate-900/40"
-                    >
-                      <div className="text-sm font-semibold">Başvurularım</div>
-                      <div className="mt-1 text-xs text-slate-400">Durum, notlar, görüşme linki</div>
-                    </Link>
-
-                    <Link
-                      href="/cv"
-                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 hover:bg-slate-900/40"
-                    >
-                      <div className="text-sm font-semibold">Profilim</div>
-                      <div className="mt-1 text-xs text-slate-400">CV / kriter / lokasyon</div>
-                    </Link>
-
-                    <Link
-                      href="/dashboard"
-                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 hover:bg-slate-900/40"
-                    >
-                      <div className="text-sm font-semibold">Dashboard</div>
-                      <div className="mt-1 text-xs text-slate-400">Rol ekranına git</div>
-                    </Link>
-                  </div>
-                )}
-
-                {loggedInRole === "employer" && (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Link
-                      href="/employer/dashboard"
-                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 hover:bg-slate-900/40"
-                    >
-                      <div className="text-sm font-semibold">İşveren Dashboard</div>
-                      <div className="mt-1 text-xs text-slate-400">İlanlar, talepler, başvurular</div>
-                    </Link>
-
-                    <Link
-                      href="/jobs/new"
-                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 hover:bg-slate-900/40"
-                    >
-                      <div className="text-sm font-semibold">Yeni İlan Taslağı</div>
-                      <div className="mt-1 text-xs text-slate-400">Taslak oluştur</div>
-                    </Link>
-
-                    <Link
-                      href="/employer/job-requests/new"
-                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 hover:bg-slate-900/40"
-                    >
-                      <div className="text-sm font-semibold">İlan Talebi (Paket)</div>
-                      <div className="mt-1 text-xs text-slate-400">Paket seç → admin onayı</div>
-                    </Link>
-
-                    <Link
-                      href="/employer/applications"
-                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 hover:bg-slate-900/40"
-                    >
-                      <div className="text-sm font-semibold">Başvurular</div>
-                      <div className="mt-1 text-xs text-slate-400">Görüş/puan/renk/meeting</div>
-                    </Link>
-
-                    <Link
-                      href="/employer/profile"
-                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 hover:bg-slate-900/40 sm:col-span-2"
-                    >
-                      <div className="text-sm font-semibold">Firma Profili</div>
-                      <div className="mt-1 text-xs text-slate-400">
-                        Firma adı, bilgiler, ilanlarda gösterim
-                      </div>
-                    </Link>
-                  </div>
-                )}
-
-                {loggedInRole === "advertiser" && (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Link
-                      href="/advertiser/dashboard"
-                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 hover:bg-slate-900/40"
-                    >
-                      <div className="text-sm font-semibold">Reklamveren Dashboard</div>
-                      <div className="mt-1 text-xs text-slate-400">Reklam kampanyaları</div>
-                    </Link>
-
-                    <Link
-                      href="/advertiser/campaigns/new"
-                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 hover:bg-slate-900/40"
-                    >
-                      <div className="text-sm font-semibold">Yeni Reklam Kampanyası</div>
-                      <div className="mt-1 text-xs text-slate-400">Kampanya oluştur</div>
-                    </Link>
-
-                    <Link
-                      href="/advertiser/stats"
-                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 hover:bg-slate-900/40"
-                    >
-                      <div className="text-sm font-semibold">Reklam İstatistikleri</div>
-                      <div className="mt-1 text-xs text-slate-400">Görünüm, tıklama, dönüşüm</div>
-                    </Link>
-                  </div>
-                )}
-
-                {loggedInRole === "admin" && (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Link
-                      href="/admin/dashboard"
-                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 hover:bg-slate-900/40"
-                    >
-                      <div className="text-sm font-semibold">Admin Dashboard</div>
-                      <div className="mt-1 text-xs text-slate-400">Onaylar / yönetim</div>
-                    </Link>
-
-                    <Link
-                      href="/dashboard"
-                      className="rounded-xl border border-slate-800 bg-slate-950 p-4 hover:bg-slate-900/40"
-                    >
-                      <div className="text-sm font-semibold">Dashboard</div>
-                      <div className="mt-1 text-xs text-slate-400">Rol ekranına git</div>
-                    </Link>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="md:col-span-4">
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5">
-                <div className="text-sm font-semibold text-slate-100">Reklam</div>
-                <div className="mt-3">
-                  <AdSlot placement="HOME_RIGHT" country="TR" />
-                </div>
-              </div>
-
-              <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950/50 p-5">
-                <div className="text-sm font-semibold text-slate-100">Kısayollar</div>
-                <div className="mt-3 grid gap-2 text-sm">
-                  <Link className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 hover:bg-slate-900/40" href="/jobs">
-                    İlanlar
-                  </Link>
-                  <Link className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 hover:bg-slate-900/40" href="/cv">
-                    Profil
-                  </Link>
-                  <Link className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 hover:bg-slate-900/40" href="/dashboard">
-                    Dashboard
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    );
-  }
-
-  // ----------------------------------------------------------
-  // Logged-out Landing
+  // Ana Sayfa — hem logged-in hem logged-out aynı landing page
   // ----------------------------------------------------------
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-50">
 
-      {/* ── NAVBAR (Kompakt) ── */}
-      <nav className="sticky top-0 z-30 border-b border-slate-800/60 bg-slate-950/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-2 sm:px-6">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold text-xs">D</div>
-            <div className="hidden sm:block">
-              <div className="text-xs font-bold leading-tight">DriverAll</div>
-              <div className="text-[9px] text-slate-500 leading-tight">Sürücü İş Platformu</div>
+      {/* ── NAVBAR (Kompakt) — sadece logged-out'ta göster, logged-in'de TopBar zaten var ── */}
+      {!sessionToken && (
+        <nav className="sticky top-0 z-30 border-b border-slate-800/60 bg-slate-950/95 backdrop-blur-md">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-2 sm:px-6">
+            <Link href="/" className="inline-flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold text-xs">D</div>
+              <div className="hidden sm:block">
+                <div className="text-xs font-bold leading-tight">DriverAll</div>
+                <div className="text-[9px] text-slate-500 leading-tight">Sürücü İş Platformu</div>
+              </div>
+            </Link>
+            <div className="flex items-center gap-2">
+              <Link href="/jobs" className="text-xs sm:text-sm text-slate-300 hover:text-white transition">İlanlar</Link>
+              <Link href="/register/auth" className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-100 hover:bg-slate-800 transition">Giriş</Link>
+              <Link href="/register/auth" className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-emerald-400 transition">Kayıt</Link>
             </div>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link href="/jobs" className="text-xs sm:text-sm text-slate-300 hover:text-white transition">İlanlar</Link>
-            <Link href="/register/auth" className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-100 hover:bg-slate-800 transition">Giriş</Link>
-            <Link href="/register/auth" className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-emerald-400 transition">Kayıt</Link>
           </div>
-        </div>
-      </nav>
+        </nav>
+      )}
 
       {/* ── HERO (Kompakt, Görsel) ── */}
       <section className="relative overflow-hidden">
@@ -1344,7 +1156,10 @@ function HomePageContent() {
             <div className="flex items-center gap-4 text-xs text-slate-400">
               <Link href="/jobs" className="hover:text-slate-200 transition">İlanlar</Link>
               <Link href="/packages" className="hover:text-slate-200 transition">Paketler</Link>
-              <Link href="/register/auth" className="hover:text-slate-200 transition">Giriş / Kayıt</Link>
+              {sessionToken
+                ? <Link href="/dashboard" className="hover:text-slate-200 transition">Dashboard</Link>
+                : <Link href="/register/auth" className="hover:text-slate-200 transition">Giriş / Kayıt</Link>
+              }
             </div>
           </div>
         </div>

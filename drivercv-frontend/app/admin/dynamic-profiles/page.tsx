@@ -434,19 +434,19 @@ export default function DynamicProfilesPage() {
                       <td className="px-4 py-4">
                         <div>
                           <div className="text-sm font-medium text-slate-100">
-                            {profile.basicInfo.fullName || profile.user.name}
+                            {profile.basicInfo?.fullName || (profile.user as any)?.name || "—"}
                           </div>
-                          <div className="text-sm text-slate-400">{profile.user.email}</div>
+                          <div className="text-sm text-slate-400">{(profile.user as any)?.email || "—"}</div>
                         </div>
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex items-center space-x-2">
-                          <span className="text-lg">{profile.role.icon}</span>
+                          <span className="text-lg">{profile.role?.icon || "○"}</span>
                           <div>
                             <div className="text-sm font-medium text-slate-100">
-                              {profile.role.displayName}
+                              {profile.role?.displayName || "—"}
                             </div>
-                            <div className="text-xs text-slate-400">{profile.role.name}</div>
+                            <div className="text-xs text-slate-400">{profile.role?.name || "—"}</div>
                           </div>
                         </div>
                       </td>
@@ -460,14 +460,14 @@ export default function DynamicProfilesPage() {
                         <div className="flex items-center space-x-2">
                           <span
                             className={`px-2 py-1 rounded text-xs font-medium ${
-                              profile.status.isProfileComplete
+                              profile.status?.isProfileComplete
                                 ? "bg-emerald-500/20 text-emerald-400"
                                 : "bg-red-500/20 text-red-400"
                             }`}
                           >
-                            {profile.status.isProfileComplete ? "Tamamlandı" : "Eksik"}
+                            {profile.status?.isProfileComplete ? "Tamamlandı" : "Eksik"}
                           </span>
-                          {profile.status.isVerified && (
+                          {profile.status?.isVerified && (
                             <span className="px-2 py-1 rounded text-xs font-medium bg-sky-500/20 text-sky-400">
                               Doğrulanmış
                             </span>
@@ -480,18 +480,18 @@ export default function DynamicProfilesPage() {
                             <div className="w-full bg-slate-700 rounded-full h-2">
                               <div
                                 className="bg-sky-500 h-2 rounded-full"
-                                style={{ width: `${profile.status.completionPercentage}%` }}
+                                style={{ width: `${profile.status?.completionPercentage ?? 0}%` }}
                               />
                             </div>
                           </div>
                           <span className="text-sm text-slate-300">
-                            {profile.status.completionPercentage}%
+                            {profile.status?.completionPercentage ?? 0}%
                           </span>
                         </div>
                       </td>
                       <td className="px-4 py-4">
                         <div className="text-sm text-slate-300">
-                          {new Date(profile.stats.lastProfileUpdate).toLocaleDateString("tr-TR")}
+                          {profile.stats?.lastProfileUpdate ? new Date(profile.stats.lastProfileUpdate).toLocaleDateString("tr-TR") : "—"}
                         </div>
                       </td>
                       <td className="px-4 py-4">

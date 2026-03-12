@@ -8,6 +8,7 @@ const express = require("express");
 const router = express.Router();
 
 const Role = require("../models/Role");
+const { getPermissionDefinitions, buildFullPermissions, buildEmptyPermissions } = require("../constants/permissions");
 
 // Fallback — DB'de Role koleksiyonu boşsa veya henüz seed edilmemişse kullanılır
 const FALLBACK_CANDIDATE_SUB_ROLES = [
@@ -114,6 +115,50 @@ router.get("/subroles", async (req, res) => {
       message: "Sub-roles yüklenemedi",
       error: err?.message || String(err),
     });
+  }
+});
+
+// ----------------------------------------------------------
+// GET /api/public/roles/permissions — Tüm yetki tanımları
+// Frontend'de yetki atama UI'ı için kullanılır
+// ----------------------------------------------------------
+router.get("/permissions", async (_req, res) => {
+  try {
+    return res.json({
+      success: true,
+      modules: getPermissionDefinitions(),
+    });
+  } catch (err) {
+    console.error("GET /api/public/roles/permissions error:", err);
+    return res.status(500).json({ success: false, message: "Yetki tanımları yüklenemedi" });
+  }
+});
+
+// ----------------------------------------------------------
+// GET /api/public/roles/permissions/full — Tüm yetkiler açık (owner default)
+// ----------------------------------------------------------
+router.get("/permissions/full", async (_req, res) => {
+  try {
+    return res.json({
+      success: true,
+      permissions: buildFullPermissions(),
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: "Hata" });
+  }
+});
+
+// ----------------------------------------------------------
+// GET /api/public/roles/permissions/empty — Tüm yetkiler kapalı (yeni kullanıcı default)
+// ----------------------------------------------------------
+router.get("/permissions/empty", async (_req, res) => {
+  try {
+    return res.json({
+      success: true,
+      permissions: buildEmptyPermissions(),
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: "Hata" });
   }
 });
 

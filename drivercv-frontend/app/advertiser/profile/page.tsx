@@ -71,10 +71,6 @@ export default function AdvertiserProfilePage() {
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
 
-  // Alt roller
-  const [availableSubRoles, setAvailableSubRoles] = useState<{ key: string; label: string; description?: string }[]>([]);
-  const [selectedSubRoles, setSelectedSubRoles] = useState<string[]>([]);
-
   const headersAuth = useMemo(() => coreAuthHeaders(), []);
 
   async function load() {
@@ -110,15 +106,6 @@ export default function AdvertiserProfilePage() {
       setContactName(String(dyn.contactName || "").trim());
       setContactEmail(String(dyn.contactEmail || p.email || "").trim());
 
-      // Alt rolleri yükle
-      setSelectedSubRoles(Array.isArray(p.subRoles) ? p.subRoles : []);
-      try {
-        const srRes = await fetch("/api/public/roles/subroles?category=advertiser");
-        const srData = await srRes.json();
-        if (srRes.ok && Array.isArray(srData.subRoles)) {
-          setAvailableSubRoles(srData.subRoles);
-        }
-      } catch { /* alt roller opsiyonel */ }
     } catch (e: any) {
       setErr(e?.message || "Profil yüklenirken hata oluştu.");
     } finally {
@@ -223,8 +210,6 @@ export default function AdvertiserProfilePage() {
         },
 
         about: aboutCompany.trim(),
-
-        subRoles: selectedSubRoles,
 
         dynamicValues: {
           ...(profile?.dynamicValues || {}),
@@ -366,38 +351,8 @@ export default function AdvertiserProfilePage() {
                 </div>
               </div>
 
-              {/* Sağ: Alt Roller + Yetkili + Kaydet */}
+              {/* Sağ: Yetkili + Kaydet */}
               <div className="md:col-span-5 space-y-4">
-                {/* Alt Roller */}
-                {availableSubRoles.length > 0 && (
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-3">
-                    <div className="text-sm font-semibold text-slate-100">Reklam Türü / Alt Rol</div>
-                    <p className="text-[11px] text-slate-400">Reklam hizmet alanınızı seçin (birden fazla seçilebilir)</p>
-                    <div className="space-y-2">
-                      {availableSubRoles.map((sr) => (
-                        <label key={sr.key} className="flex items-start gap-2.5 cursor-pointer group">
-                          <input
-                            type="checkbox"
-                            checked={selectedSubRoles.includes(sr.key)}
-                            onChange={() => {
-                              setSelectedSubRoles((prev) =>
-                                prev.includes(sr.key)
-                                  ? prev.filter((k) => k !== sr.key)
-                                  : [...prev, sr.key]
-                              );
-                            }}
-                            className="mt-0.5 h-4 w-4 rounded border-slate-600 bg-slate-950 text-violet-500 focus:ring-violet-600/30"
-                          />
-                          <div>
-                            <div className="text-sm text-slate-200 group-hover:text-violet-300 transition-colors">{sr.label}</div>
-                            {sr.description && <div className="text-[11px] text-slate-500">{sr.description}</div>}
-                          </div>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-4">
                   <div className="text-sm font-semibold text-slate-100">Yetkili / İletişim</div>
 

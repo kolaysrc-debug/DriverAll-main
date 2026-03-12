@@ -354,7 +354,14 @@ export default function TopBar() {
   // Üst menü kısayolları (rol bazlı) - kısa tutuldu
   // ----------------------------------------------------------
   const topShortcuts = useMemo(() => {
-    const items: { href: string; label: string }[] = [{ href: dashboardHref, label: "Dashboard" }];
+    const items: { href: string; label: string }[] = [];
+
+    // Giriş yapılmışsa her zaman ana sayfa linki göster
+    if (hasToken) {
+      items.push({ href: "/", label: "Ana Sayfa" });
+    }
+
+    items.push({ href: dashboardHref, label: "Dashboard" });
 
     if (isAdmin) {
       items.push(
@@ -391,7 +398,7 @@ export default function TopBar() {
       seen.add(it.href);
       return true;
     });
-  }, [dashboardHref, isAdmin, isEmployer, isAdvertiser, isServiceProvider, isDriver]);
+  }, [hasToken, dashboardHref, isAdmin, isEmployer, isAdvertiser, isServiceProvider, isDriver]);
 
   // ----------------------------------------------------------
   // Admin flyout menüler (hover ile sağa açılır)
@@ -503,6 +510,14 @@ export default function TopBar() {
                   <div className="px-2 pb-2 pt-1">
                     <div className="text-xs text-slate-400">Hızlı Menü</div>
                   </div>
+
+                  <Link
+                    href="/"
+                    onClick={handleMenuLinkClick}
+                    className="block rounded-md px-2 py-2 text-sm text-slate-200 hover:bg-slate-900"
+                  >
+                    🏠 Ana Sayfa
+                  </Link>
 
                   <Link
                     href={dashboardHref}

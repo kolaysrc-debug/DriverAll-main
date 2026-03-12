@@ -329,13 +329,16 @@ router.get("/admin/list", requireAuth, requireAdmin, async (req, res) => {
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    const profiles = await DynamicProfile.find(filter)
+    const rawProfiles = await DynamicProfile.find(filter)
       .populate('role')
-      .populate('userData')
+      .populate('user', 'name email role')
       .sort({ "stats.lastProfileUpdate": -1 })
       .skip(skip)
       .limit(parseInt(limit));
     
+    // role veya user silinmişse (null) filtrele — DB tutarsızlığı koruması
+    const profiles = rawProfiles.filter(p => p.role && p.user);
+
     const total = await DynamicProfile.countDocuments(filter);
     
     return res.json({
