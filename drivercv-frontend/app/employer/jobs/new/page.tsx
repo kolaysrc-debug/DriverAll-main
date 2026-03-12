@@ -13,8 +13,7 @@ import { useRouter } from "next/navigation";
 import { createJob } from "@/lib/api/jobs";
 import { fetchMyBranches } from "@/lib/api/branches";
 import { isAutoAdded, resolveGroupSelection } from "@/lib/groupCriteriaEngine";
-
-type SafeUser = { role?: string };
+import { getUser } from "@/lib/session";
 
 type FilterNode = {
   key: string;
@@ -32,16 +31,6 @@ type FilterGroup = {
   selectionMode?: "multi" | "single";
   nodes: FilterNode[];
 };
-
-function readUserFromStorage(): SafeUser | null {
-  try {
-    const raw = window.localStorage.getItem("user");
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
 
 async function getFilters(country: string) {
   const cc = String(country || "TR").toUpperCase();
@@ -81,9 +70,9 @@ export default function EmployerNewJobPage() {
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    const u = readUserFromStorage();
+    const u = getUser();
     if (!u?.role) {
-      router.replace("/login");
+      router.replace("/register/auth");
       return;
     }
     if (u.role !== "employer" && u.role !== "admin") {

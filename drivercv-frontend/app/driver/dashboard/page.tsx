@@ -18,6 +18,7 @@ import AdSlot from "@/components/AdSlot";
 import { fetchPublicJobs } from "@/lib/api/publicJobs";
 import { getMyProfile, type ProfileData } from "@/lib/api/profile";
 import { listMyApplications, type DriverApplication } from "@/lib/api/applications";
+import { getUser } from "@/lib/session";
 
 type User = { name?: string; email?: string; role?: string };
 
@@ -100,14 +101,10 @@ export default function DriverDashboardPage() {
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsErr, setJobsErr] = useState<string | null>(null);
 
-  /* -- user from localStorage -- */
+  /* -- user from session -- */
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem("user");
-      if (raw) setUser(JSON.parse(raw));
-    } catch {
-      /* ignore */
-    }
+    const u = getUser();
+    if (u) setUser({ name: u.name, email: u.email, role: u.role });
   }, []);
 
   /* -- profile -- */

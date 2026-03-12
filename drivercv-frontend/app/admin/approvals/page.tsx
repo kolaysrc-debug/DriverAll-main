@@ -6,7 +6,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AdminOnly from "@/components/AdminOnly";
-import { getToken } from "@/lib/session";
+import { getToken, clearSession } from "@/lib/session";
 
 interface AdvertiserUser {
   _id: string;
@@ -31,14 +31,9 @@ export default function AdminApprovalsPage() {
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   const handleAuthFailure = (message?: string) => {
-    try {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-    } catch {
-      // ignore
-    }
+    clearSession();
     setError(message || "Oturum geçersiz. Lütfen tekrar giriş yapın.");
-    router.replace("/login");
+    router.replace("/register/auth");
   };
 
   const apiFetch = async (path: string, init?: RequestInit) => {

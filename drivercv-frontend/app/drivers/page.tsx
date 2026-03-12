@@ -7,6 +7,7 @@ import {
   deleteDriver,
   DriverUser,
 } from "@/lib/api/drivers";
+import { getUser } from "@/lib/session";
 
 type LoggedInUser = {
   _id?: string;
@@ -47,17 +48,8 @@ export default function UsersAdminPage() {
 
   // Kullanıcı + listeyi yükle
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const raw = window.localStorage.getItem("user");
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-          setCurrentUser(parsed);
-        } catch {
-          // geçersiz JSON'u boşver
-        }
-      }
-    }
+    const u = getUser();
+    if (u) setCurrentUser(u as any);
 
     loadUsers();
   }, []);

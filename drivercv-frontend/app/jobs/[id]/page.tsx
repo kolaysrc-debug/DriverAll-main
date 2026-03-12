@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { fetchPublicJobById } from "@/lib/api/publicJobs";
 import { applyToJob } from "@/lib/api/applications";
+import { getUser, getToken } from "@/lib/session";
 
 type JobOwner =
   | string
@@ -41,25 +42,6 @@ type Job = {
 };
 
 type StoredUser = { role?: string; email?: string; name?: string };
-
-function readUser(): StoredUser | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem("user");
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-function readToken(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.localStorage.getItem("token");
-  } catch {
-    return null;
-  }
-}
 
 function getOwnerLabel(owner?: JobOwner | null) {
   if (!owner) return "-";
@@ -96,8 +78,8 @@ export default function JobDetailPage() {
   const [applyMsg, setApplyMsg] = useState<string | null>(null);
   const [applySuccess, setApplySuccess] = useState(false);
 
-  const user = useMemo(() => readUser(), []);
-  const token = useMemo(() => readToken(), []);
+  const user = useMemo(() => getUser() as StoredUser | null, []);
+  const token = useMemo(() => getToken() || null, []);
 
   const isDriver = Boolean(token) && String(user?.role || "") === "driver";
 
@@ -323,7 +305,7 @@ export default function JobDetailPage() {
                 <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/50 p-6 text-center">
                   <div className="text-slate-400 text-sm">Başvurmak için giriş yapmalısınız.</div>
                   <button
-                    onClick={() => router.push("/login")}
+                    onClick={() => router.push("/register/auth")}
                     className="mt-3 inline-block rounded-lg bg-sky-600 px-5 py-2 text-sm font-medium text-white hover:bg-sky-500 transition-colors"
                   >
                     Giriş Yap

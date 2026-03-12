@@ -9,7 +9,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import EmployerOnly from "@/components/EmployerOnly";
 import AdSlot from "@/components/AdSlot";
-import { getToken } from "@/lib/session";
+import { getToken, getUser } from "@/lib/session";
 
 type StoredUser = { name?: string; email?: string; role?: string };
 
@@ -134,13 +134,8 @@ export default function EmployerDashboardPage() {
   const [orders, setOrders] = useState<PackageOrder[]>([]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = window.localStorage.getItem("user");
-      setUser(raw ? JSON.parse(raw) : null);
-    } catch {
-      setUser(null);
-    }
+    const u = getUser();
+    setUser(u ? { name: u.name, email: u.email, role: u.role } : null);
 
     // İlan ve başvuru sayılarını çek
     const token = getToken();
@@ -231,12 +226,20 @@ export default function EmployerDashboardPage() {
               <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="text-sm font-semibold text-slate-100">💳 Paketlerim & Krediler</div>
-                  <Link
-                    href="/packages"
-                    className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 transition-colors"
-                  >
-                    Paket Satın Al
-                  </Link>
+                  <div className="flex gap-2">
+                    <Link
+                      href="/employer/orders"
+                      className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 transition-colors"
+                    >
+                      Tüm Siparişler
+                    </Link>
+                    <Link
+                      href="/packages"
+                      className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 transition-colors"
+                    >
+                      Paket Satın Al
+                    </Link>
+                  </div>
                 </div>
 
                 {activeOrders.length === 0 && pendingOrders.length === 0 ? (

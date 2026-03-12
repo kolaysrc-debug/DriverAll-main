@@ -1,0 +1,1 @@
+refactor: centralize auth helpers across all frontend pages 

@@ -10,7 +10,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import RoleGate from "@/components/RoleGate";
-import { getToken } from "@/lib/session";
+import { getToken, getUser } from "@/lib/session";
 
 type Profile = {
   fullName?: string;
@@ -36,13 +36,8 @@ export default function AccountPage() {
   });
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem("user");
-      if (raw) {
-        const u = JSON.parse(raw);
-        setUserRole(String(u?.role || ""));
-      }
-    } catch { /* ignore */ }
+    const u = getUser();
+    if (u?.role) setUserRole(String(u.role));
 
     const token = getToken();
     if (!token) return;

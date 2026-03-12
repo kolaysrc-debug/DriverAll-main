@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import AdminOnly from "@/components/AdminOnly";
 import { useRouter } from "next/navigation";
 import { authHeaders } from "@/lib/api/_core";
+import { clearSession } from "@/lib/session";
 
 type Row = {
   _id?: string;
@@ -32,12 +33,9 @@ export default function AdminPlacementsPage() {
   const [info, setInfo] = useState<string | null>(null);
 
   function handleAuthFailure(message?: string) {
-    try {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-    } catch {}
+    clearSession();
     setErr(message || "Oturum geçersiz. Lütfen tekrar giriş yapın.");
-    router.replace("/login");
+    router.replace("/register/auth");
   }
 
   const [key, setKey] = useState("HOME_RIGHT");

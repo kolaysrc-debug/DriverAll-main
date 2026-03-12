@@ -12,11 +12,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { approveAdRequest, fetchAdminAdRequests, rejectAdRequest } from "@/lib/api/ads";
-import { getToken } from "@/lib/session";
-
-type SafeUser = {
-  role?: "admin" | "employer" | "advertiser" | "driver" | string;
-};
+import { getUser, clearSession } from "@/lib/session";
 
 type AdReqItem = {
   _id: string;
@@ -34,37 +30,6 @@ type AdReqItem = {
   createdAt?: string;
 };
 
-function readUserFromStorage(): SafeUser | null {
-  try {
-    const token = getToken();
-    if (token) {
-      const parts = token.split(".");
-      if (parts.length >= 2) {
-        const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-        const json = decodeURIComponent(
-          atob(b64)
-            .split("")
-            .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-            .join("")
-        );
-        const payload = JSON.parse(json);
-        const u: any = { _id: payload.userId, email: payload.email, role: payload.role };
-        if (u.role) {
-          window.localStorage.setItem("user", JSON.stringify(u));
-          return u as SafeUser;
-        }
-      }
-    }
-
-    const raw = window.localStorage.getItem("user");
-    if (!raw) return null;
-    const u = JSON.parse(raw);
-    if (u?.role) return u as SafeUser;
-    return null;
-  } catch {
-    return null;
-  }
-}
 
 function StatusPill({ status }: { status: string }) {
   const s = String(status || "pending");
@@ -94,13 +59,10 @@ export default function AdminAdApprovalsPage() {
   const [q, setQ] = useState("");
 
   function handleAuthFailure(message: string) {
-    try {
-      window.localStorage.removeItem("token");
-      window.localStorage.removeItem("user");
-      window.dispatchEvent(new Event("driverall-auth-changed"));
-    } catch {}
+    clearSession();
+    window.dispatchEvent(new Event("driverall-auth-changed"));
     setErr(message || "Oturum geçersiz. Lütfen tekrar giriş yapın.");
-    router.replace("/login");
+    router.replace("/register/auth");
   }
 
   function isAuthError(e: any) {
@@ -109,9 +71,9 @@ export default function AdminAdApprovalsPage() {
   }
 
   useEffect(() => {
-    const u = readUserFromStorage();
+    const u = getUser();
     if (!u?.role) {
-      router.replace("/login");
+      router.replace("/register/auth");
       return;
     }
     if (u.role !== "admin") {

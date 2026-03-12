@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import AdminOnly from "@/components/AdminOnly";
 import { useRouter } from "next/navigation";
 import { authHeaders } from "@/lib/api/_core";
+import { clearSession } from "@/lib/session";
 
 function jsonHeaders(): HeadersInit {
   return { "Content-Type": "application/json", ...authHeaders() };
@@ -39,13 +40,10 @@ export default function AdminOrdersPage() {
   const [info, setInfo] = useState<string | null>(null);
 
   function handleAuthFailure(message: string) {
-    try {
-      window.localStorage.removeItem("token");
-      window.localStorage.removeItem("user");
-      window.dispatchEvent(new Event("driverall-auth-changed"));
-    } catch {}
+    clearSession();
+    window.dispatchEvent(new Event("driverall-auth-changed"));
     setErr(message || "Oturum geçersiz. Lütfen tekrar giriş yapın.");
-    router.replace("/login");
+    router.replace("/register/auth");
   }
 
   const [paymentStatus, setPaymentStatus] = useState<string>("");

@@ -60,7 +60,7 @@ export default function AdminJobsPage() {
   useEffect(() => {
     const u = getUser();
     if (!u?.role) {
-      router.replace("/login");
+      router.replace("/register/auth");
       return;
     }
     if (u.role !== "admin") {

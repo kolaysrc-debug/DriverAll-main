@@ -12,6 +12,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import AdminOnly from "@/components/AdminOnly";
 import { useRouter } from "next/navigation";
 import { authHeaders } from "@/lib/api/_core";
+import { clearSession } from "@/lib/session";
 
 type Row = {
   _id: string;
@@ -36,13 +37,10 @@ export default function AdminAdRequestsPage() {
   const [err, setErr] = useState<string | null>(null);
 
   function handleAuthFailure(message: string) {
-    try {
-      window.localStorage.removeItem("token");
-      window.localStorage.removeItem("user");
-      window.dispatchEvent(new Event("driverall-auth-changed"));
-    } catch {}
+    clearSession();
+    window.dispatchEvent(new Event("driverall-auth-changed"));
     setErr(message || "Oturum geçersiz. Lütfen tekrar giriş yapın.");
-    router.replace("/login");
+    router.replace("/register/auth");
   }
 
   async function load() {

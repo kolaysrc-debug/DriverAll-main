@@ -7,6 +7,7 @@ import Link from "next/link";
 import AdminOnly from "@/components/AdminOnly";
 import { useRouter } from "next/navigation";
 import { authHeaders } from "@/lib/api/_core";
+import { clearSession } from "@/lib/session";
 
 export default function AdminPackagesPage() {
   const router = useRouter();
@@ -18,14 +19,9 @@ export default function AdminPackagesPage() {
   const [country, setCountry] = useState<string>("");
 
   const handleAuthFailure = (message?: string) => {
-    try {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-    } catch {
-      // ignore
-    }
+    clearSession();
     setErr(message || "Oturum geçersiz. Lütfen tekrar giriş yapın.");
-    router.replace("/login");
+    router.replace("/register/auth");
   };
 
   async function load() {

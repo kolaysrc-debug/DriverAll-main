@@ -13,50 +13,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { fetchJobById, updateJob, archiveJob, deleteJob } from "@/lib/api/jobs";
-
-type SafeUser = { role?: string };
-
-function readUserFromStorage(): SafeUser | null {
-  try {
-    // Token varsa HER ZAMAN token payload'ını esas al (user kaydı bozuk kalmasın)
-    const token = window.localStorage.getItem("token");
-    if (token) {
-      const parts = token.split(".");
-      if (parts.length >= 2) {
-        const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-        const json = decodeURIComponent(
-          atob(b64)
-            .split("")
-            .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-            .join("")
-        );
-        const payload = JSON.parse(json);
-
-        const userFromToken: any = {
-          _id: payload.userId,
-          email: payload.email,
-          role: payload.role,
-        };
-
-        if (userFromToken.role) {
-          window.localStorage.setItem("user", JSON.stringify(userFromToken));
-          return userFromToken as SafeUser;
-        }
-      }
-    }
-
-    // Token yoksa user'a düş
-    const raw = window.localStorage.getItem("user");
-    if (!raw) return null;
-
-    const u = JSON.parse(raw);
-    if (u?.role) return u as SafeUser;
-
-    return null;
-  } catch {
-    return null;
-  }
-}
+import { getUser } from "@/lib/session";
 
 export default function EmployerJobEditPage() {
   const router = useRouter();
@@ -77,9 +34,9 @@ export default function EmployerJobEditPage() {
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    const u = readUserFromStorage();
+    const u = getUser();
     if (!u?.role) {
-      router.replace("/login");
+      router.replace("/register/auth");
       return;
     }
     if (u.role !== "employer" && u.role !== "admin") {

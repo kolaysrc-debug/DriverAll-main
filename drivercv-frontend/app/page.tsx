@@ -19,6 +19,7 @@ import { fetchLocationsList } from "@/lib/api/publicJobs";
 import AdSlot from "@/components/AdSlot";
 import JobSlider from "@/components/JobSlider";
 import FloatingActionButton from "@/components/FloatingActionButton";
+import { getToken, getUser } from "@/lib/session";
 
 type UserRole = "driver" | "employer" | "advertiser" | "admin";
 
@@ -52,9 +53,8 @@ function safeParseJson<T>(raw: string | null): T | null {
 }
 
 function getStoredSession(): { token: string | null; user: StoredUser | null } {
-  if (typeof window === "undefined") return { token: null, user: null };
-  const token = window.localStorage.getItem("token");
-  const user = safeParseJson<StoredUser>(window.localStorage.getItem("user"));
+  const token = getToken() || null;
+  const user = getUser() as StoredUser | null;
   return { token, user };
 }
 
@@ -196,9 +196,9 @@ function HomePageContent() {
     (async () => {
       try {
         if (typeof window === "undefined") return;
-        const token = window.localStorage.getItem("token");
-        const userRaw = window.localStorage.getItem("user");
-        const role = userRaw ? String(safeParseJson<any>(userRaw)?.role || "") : "";
+        const token = getToken();
+        const user = getUser();
+        const role = String(user?.role || "");
         if (!token || String(role).toLowerCase() !== "driver") return;
 
         const headers = { Authorization: `Bearer ${token}` };
