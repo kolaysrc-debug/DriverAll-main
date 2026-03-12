@@ -234,3 +234,42 @@ feat: OAuth integration (Google, Yandex) + Document expiry system + Notification
 2. **Microsoft OAuth**: İhtiyaç olursa kurulum tamamlanacak
 3. **OAuth Test**: Farklı kullanıcılarla daha fazla test
 4. **Production**: OAuth callback URL'lerini production domain'e güncellemek gerekecek
+
+---
+
+## 📅 Session Log: 12 Mart 2026 (02:00 - 03:04)
+
+### ✅ Tamamlanan Düzeltmeler
+
+#### 1. Ana Sayfa Erişim Sorunu (Kritik)
+- **Sorun**: Giriş yapmış kullanıcılar `/` adresine gidemiyordu — `useEffect` ile `/dashboard`'a otomatik redirect yapılıyordu
+- **Çözüm 1**: Otomatik redirect kaldırıldı
+- **Çözüm 2**: Gereksiz "pre-dashboard" bloğu (`if (sessionToken) { return ... }`) tamamen silindi — tüm kullanıcılar artık gerçek landing page'i görüyor
+- **Çözüm 3**: Landing page'in kendi navbar'ı `!sessionToken` koşuluyla gizlendi (TopBar zaten var)
+- **Çözüm 4**: Footer'da giriş yapmışsa "Dashboard", yapmamışsa "Giriş / Kayıt" linki
+
+#### 2. TopBar Navigasyon
+- Tüm roller için "Ana Sayfa" (`/`) linki eklendi (hem üst nav hem dropdown menü)
+- `hasToken` dependency array'e eklendi
+
+#### 3. Employer Dashboard — Paket/Kredi Bilgisi
+- Aktif paket ve kredi özeti eklendi (`/api/orders/mine` fetch)
+
+#### 4. Backend Düzeltmeleri
+- `ownerSubUsers.js`: `resolveRole()` hem ObjectId hem string name destekliyor
+- `dynamicProfiles.js`: `admin/list` endpoint'inde `user` populate + null filtre
+
+#### 5. Frontend Null Safety
+- `admin/dynamic-profiles`: `profile.role`, `profile.user`, `profile.basicInfo`, `profile.status`, `profile.stats` null kontrolleri
+- Employer profil: Kaydet butonu dirty state kontrolü
+
+### 📦 Commit
+- **Hash**: `ba4641a`
+- **Message**: `fix: ana sayfa erişim + navigasyon + employer dashboard paket bilgisi + null safety`
+- **Dosya sayısı**: 13 (3 yeni, 10 değişiklik)
+
+### 📝 Sonraki Adımlar
+- Admin UI stabilizasyon (apiFetch/authHeaders standardizasyonu)
+- E2E satın alma akışı audit (Package -> Order)
+- E2E ilan yayınlama/onay akışı audit
+- Employer team sayfası (yeni eklendi, test gerekebilir)
