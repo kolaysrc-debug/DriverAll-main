@@ -261,6 +261,15 @@ export default function AdminHomePage() {
   const [taskCounts, setTaskCounts] = useState<{ total: number; open: number; needsAdminTest: number; notOk: number } | null>(null);
   const [taskCountsErr, setTaskCountsErr] = useState<string | null>(null);
 
+  type DashStats = {
+    users: { total: number; drivers: number; employers: number; advertisers: number; newThisWeek: number };
+    jobs: { total: number; published: number };
+    payments: { pending: number };
+    orders: { active: number };
+    recentUsers: { _id: string; name: string; email: string; role: string; createdAt: string }[];
+  };
+  const [stats, setStats] = useState<DashStats | null>(null);
+
   useEffect(() => {
     let alive = true;
     async function loadTaskCounts() {
@@ -293,10 +302,18 @@ export default function AdminHomePage() {
       }
     }
 
+    async function loadStats() {
+      try {
+        const res = await fetch("/api/admin/dashboard/stats", { headers: { ...authHeaders() }, cache: "no-store" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) return;
+        if (alive) setStats(data.stats);
+      } catch {}
+    }
+
     loadTaskCounts();
-    return () => {
-      alive = false;
-    };
+    loadStats();
+    return () => { alive = false; };
   }, []);
 
   return (
@@ -323,6 +340,55 @@ export default function AdminHomePage() {
               <div className="text-2xl font-bold text-slate-100">Admin Dashboard</div>
               <div className="mt-1 text-sm text-slate-400">Yönetim ekranları ve iş akışları</div>
             </div>
+
+            {/* Canlı İstatistikler */}
+            {stats && (
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6 mb-6">
+                <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-3">
+                  <div className="text-[10px] text-slate-400 uppercase tracking-wider">Toplam Kullanıcı</div>
+                  <div className="text-xl font-bold text-slate-100 mt-1">{stats.users.total}</div>
+                  <div className="text-[10px] text-emerald-400 mt-0.5">+{stats.users.newThisWeek} bu hafta</div>
+                </div>
+                <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-3">
+                  <div className="text-[10px] text-slate-400 uppercase tracking-wider">Sürücüler</div>
+                  <div className="text-xl font-bold text-blue-400 mt-1">{stats.users.drivers}</div>
+                </div>
+                <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-3">
+                  <div className="text-[10px] text-slate-400 uppercase tracking-wider">İşverenler</div>
+                  <div className="text-xl font-bold text-amber-400 mt-1">{stats.users.employers}</div>
+                </div>
+                <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-3">
+                  <div className="text-[10px] text-slate-400 uppercase tracking-wider">Yayındaki İlanlar</div>
+                  <div className="text-xl font-bold text-emerald-400 mt-1">{stats.jobs.published}</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">{stats.jobs.total} toplam</div>
+                </div>
+                <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-3">
+                  <div className="text-[10px] text-slate-400 uppercase tracking-wider">Bekleyen Ödeme</div>
+                  <div className={`text-xl font-bold mt-1 ${stats.payments.pending > 0 ? "text-rose-400" : "text-slate-400"}`}>{stats.payments.pending}</div>
+                </div>
+                <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-3">
+                  <div className="text-[10px] text-slate-400 uppercase tracking-wider">Aktif Sipariş</div>
+                  <div className="text-xl font-bold text-emerald-400 mt-1">{stats.orders.active}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Son Kayıtlar */}
+            {stats?.recentUsers && stats.recentUsers.length > 0 && (
+              <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4 mb-6">
+                <h3 className="text-sm font-semibold text-slate-100 mb-3">Son Kayıtlar</h3>
+                <div className="space-y-2">
+                  {stats.recentUsers.map((u) => (
+                    <div key={u._id} className="flex items-center gap-3 text-xs">
+                      <span className="w-16 shrink-0 rounded-full border border-slate-600 bg-slate-900/50 px-2 py-0.5 text-center text-[10px] font-semibold text-slate-300">{u.role}</span>
+                      <span className="text-slate-200 truncate flex-1">{u.name}</span>
+                      <span className="text-slate-500 truncate">{u.email}</span>
+                      <span className="text-slate-600 shrink-0">{new Date(u.createdAt).toLocaleDateString("tr-TR")}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {/* Ana sayfa için hızlı erişim kartları */}

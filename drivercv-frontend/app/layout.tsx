@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import TopBar from "@/components/TopBar";
+import CookieConsent from "@/components/CookieConsent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -65,6 +66,9 @@ export default function RootLayout({
             <a href="/legal/terms" className="hover:text-emerald-400 transition-colors">Kullanım Koşulları</a>
           </div>
         </footer>
+
+        {/* Cookie Consent Banner */}
+        <CookieConsent />
       </body>
     </html>
   );
