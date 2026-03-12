@@ -13,6 +13,33 @@ import { getToken } from "@/lib/session";
 
 type StoredUser = { name?: string; email?: string; role?: string };
 
+type OrderCredits = {
+  jobPostCount: number;
+  cvViewCount: number;
+  cvSaveCount: number;
+  jobCount: number;
+  adCount: number;
+};
+
+type PackageOrder = {
+  _id: string;
+  packageSnapshot: {
+    name?: string;
+    code?: string;
+    type?: string;
+    price?: number;
+    currency?: string;
+    credits?: Partial<OrderCredits>;
+    rules?: { listingDays?: number; homeDays?: number };
+  };
+  paymentStatus: string;
+  orderStatus: string;
+  creditsRemaining: Partial<OrderCredits>;
+  paidAt?: string | null;
+  expiresAt?: string | null;
+  createdAt: string;
+};
+
 const WORKFLOW_CARDS = [
   {
     title: "İlan Oluştur",
@@ -71,6 +98,17 @@ const WORKFLOW_CARDS = [
     accent: "text-rose-400 bg-rose-500/10 border-rose-500/20",
   },
   {
+    title: "Ekibim",
+    desc: "Alt kullanıcıları yönet, rol ata",
+    href: "/employer/team",
+    icon: (
+      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+      </svg>
+    ),
+    accent: "text-teal-400 bg-teal-500/10 border-teal-500/20",
+  },
+  {
     title: "İlan Akışı",
     desc: "Platformdaki tüm ilanları gözlemle",
     href: "/jobs",
@@ -93,6 +131,7 @@ export default function EmployerDashboardPage() {
   const [user, setUser] = useState<StoredUser | null>(null);
   const [jobCount, setJobCount] = useState<number | null>(null);
   const [appCount, setAppCount] = useState<number | null>(null);
+  const [orders, setOrders] = useState<PackageOrder[]>([]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -115,6 +154,11 @@ export default function EmployerDashboardPage() {
     fetch("/api/applications/employer", { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
       .then((d) => { if (Array.isArray(d?.applications)) setAppCount(d.applications.length); })
+      .catch(() => {});
+
+    fetch("/api/orders/mine", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d?.orders)) setOrders(d.orders); })
       .catch(() => {});
   }, []);
 
@@ -165,6 +209,115 @@ export default function EmployerDashboardPage() {
               <div className="mt-1"><AdSlot placement="DASHBOARD_RIGHT" country="TR" /></div>
             </div>
           </div>
+
+          {/* ─── Aktif Paket & Kredi Bilgisi ─── */}
+          {(() => {
+            const activeOrders = orders.filter((o) => o.orderStatus === "active" && o.paymentStatus === "paid");
+            const pendingOrders = orders.filter((o) => o.paymentStatus === "unpaid");
+
+            // Toplam kalan krediler
+            const totalCredits = activeOrders.reduce(
+              (acc, o) => ({
+                jobPostCount: acc.jobPostCount + (o.creditsRemaining?.jobPostCount || 0),
+                cvViewCount: acc.cvViewCount + (o.creditsRemaining?.cvViewCount || 0),
+                cvSaveCount: acc.cvSaveCount + (o.creditsRemaining?.cvSaveCount || 0),
+              }),
+              { jobPostCount: 0, cvViewCount: 0, cvSaveCount: 0 }
+            );
+
+            const hasAnyCredit = totalCredits.jobPostCount > 0 || totalCredits.cvViewCount > 0 || totalCredits.cvSaveCount > 0;
+
+            return (
+              <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold text-slate-100">💳 Paketlerim & Krediler</div>
+                  <Link
+                    href="/packages"
+                    className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 transition-colors"
+                  >
+                    Paket Satın Al
+                  </Link>
+                </div>
+
+                {activeOrders.length === 0 && pendingOrders.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/50 p-6 text-center">
+                    <div className="text-2xl">📦</div>
+                    <div className="mt-2 text-sm text-slate-400">Henüz aktif bir paketiniz yok</div>
+                    <Link
+                      href="/packages"
+                      className="mt-3 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-xs font-medium text-white hover:bg-emerald-500 transition-colors"
+                    >
+                      Paketleri İncele
+                    </Link>
+                  </div>
+                ) : (
+                  <>
+                    {/* Kalan Krediler */}
+                    {hasAnyCredit && (
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="rounded-xl border border-emerald-600/30 bg-emerald-950/20 p-3 text-center">
+                          <div className="text-2xl font-bold text-emerald-400">{totalCredits.jobPostCount}</div>
+                          <div className="text-[10px] font-medium text-slate-400 mt-1">İlan Hakkı</div>
+                        </div>
+                        <div className="rounded-xl border border-sky-600/30 bg-sky-950/20 p-3 text-center">
+                          <div className="text-2xl font-bold text-sky-400">{totalCredits.cvViewCount}</div>
+                          <div className="text-[10px] font-medium text-slate-400 mt-1">CV Görüntüleme</div>
+                        </div>
+                        <div className="rounded-xl border border-amber-600/30 bg-amber-950/20 p-3 text-center">
+                          <div className="text-2xl font-bold text-amber-400">{totalCredits.cvSaveCount}</div>
+                          <div className="text-[10px] font-medium text-slate-400 mt-1">CV Kaydetme</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Aktif Paketler */}
+                    {activeOrders.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Aktif Paketler</div>
+                        {activeOrders.map((o) => (
+                          <div key={o._id} className="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-950/50 px-4 py-3">
+                            <div>
+                              <div className="text-sm font-medium text-slate-100">{o.packageSnapshot?.name || "Paket"}</div>
+                              <div className="text-[11px] text-slate-400">
+                                İlan: {o.creditsRemaining?.jobPostCount ?? 0} hak kaldı
+                                {o.expiresAt && ` • Son: ${new Date(o.expiresAt).toLocaleDateString("tr-TR")}`}
+                              </div>
+                            </div>
+                            <span className="rounded-full border border-emerald-600/40 bg-emerald-950/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                              Aktif
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Ödeme Bekleyen Siparişler */}
+                    {pendingOrders.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Ödeme Bekleyen</div>
+                        {pendingOrders.map((o) => (
+                          <div key={o._id} className="flex items-center justify-between rounded-xl border border-amber-700/30 bg-amber-950/10 px-4 py-3">
+                            <div>
+                              <div className="text-sm font-medium text-slate-100">{o.packageSnapshot?.name || "Paket"}</div>
+                              <div className="text-[11px] text-slate-400">
+                                {o.packageSnapshot?.price != null
+                                  ? `${o.packageSnapshot.price.toLocaleString("tr-TR")} ${o.packageSnapshot.currency || "TRY"}`
+                                  : ""}
+                                {" • "}{new Date(o.createdAt).toLocaleDateString("tr-TR")}
+                              </div>
+                            </div>
+                            <span className="rounded-full border border-amber-600/40 bg-amber-950/30 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+                              Ödeme Bekleniyor
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ─── Main Grid: Workflows + Sidebar ─── */}
           <div className="mt-4 grid gap-4 md:grid-cols-12">
