@@ -82,6 +82,10 @@ const userSchema = new mongoose.Schema(
 
     approvedAt: { type: Date, default: null },
     approvedByUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+
+    // Password reset
+    passwordResetToken: { type: String, default: null },
+    passwordResetExpires: { type: Date, default: null },
   },
   { timestamps: true }
 );

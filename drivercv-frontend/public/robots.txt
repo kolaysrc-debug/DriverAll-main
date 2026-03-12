@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /employer/dashboard
+Disallow: /driver/dashboard
+Disallow: /advertiser/dashboard
+Disallow: /profile
+Disallow: /account
+
+Sitemap: https://driverall.com/sitemap.xml

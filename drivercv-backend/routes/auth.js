@@ -9,9 +9,11 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 const rateLimit = require("express-rate-limit");
 const User = require("../models/User");
 const Role = require("../models/Role");
+const { notifyWelcome, sendMail } = require("../services/emailService");
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-driverall-secret";
 const JWT_EXPIRES_IN = "7d";
@@ -214,6 +216,9 @@ router.post("/register", async (req, res) => {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
+
+    // Hoş geldin emaili
+    notifyWelcome({ to: user.email, userName: user.name, role: user.role }).catch(() => {});
 
     return res.status(201).json({ token, user: safeUser });
   } catch (err) {
@@ -469,6 +474,97 @@ router.post("/login-minimal", loginLimiter, async (req, res) => {
       message: "Sunucu hatası (login-minimal).",
       error: err?.message || String(err),
     });
+  }
+});
+
+// ----------------------------------------------------------
+// POST /api/auth/forgot-password
+// body: { email }
+// ----------------------------------------------------------
+router.post("/forgot-password", authLimiter, async (req, res) => {
+  try {
+    const email = String(req.body?.email || "").toLowerCase().trim();
+    if (!email) return res.status(400).json({ message: "E-posta zorunludur." });
+
+    const user = await User.findOne({ email });
+    // Güvenlik: kullanıcı bulunamasa bile aynı yanıtı ver
+    if (!user) return res.json({ success: true, message: "Eğer bu e-posta kayıtlıysa, şifre sıfırlama bağlantısı gönderildi." });
+
+    // Token oluştur (6 haneli kod + hash)
+    const resetCode = crypto.randomInt(100000, 999999).toString();
+    const resetToken = crypto.createHash("sha256").update(resetCode).digest("hex");
+
+    user.passwordResetToken = resetToken;
+    user.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 dakika
+    await user.save();
+
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+
+    await sendMail({
+      to: user.email,
+      subject: "DriverAll — Şifre Sıfırlama",
+      html: `
+        <div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:24px">
+          <h2 style="color:#3b82f6">Şifre Sıfırlama</h2>
+          <p>Merhaba <strong>${user.name || "Kullanıcı"}</strong>,</p>
+          <p>Şifre sıfırlama kodunuz:</p>
+          <div style="text-align:center;margin:24px 0">
+            <span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#10b981;background:#0f172a;padding:12px 24px;border-radius:12px;display:inline-block">${resetCode}</span>
+          </div>
+          <p>Bu kod <strong>15 dakika</strong> geçerlidir.</p>
+          <p>Şifre sıfırlama sayfası: <a href="${frontendUrl}/reset-password" style="color:#3b82f6">${frontendUrl}/reset-password</a></p>
+          <p style="font-size:12px;color:#94a3b8;margin-top:16px">Bu isteği siz yapmadıysanız, bu e-postayı görmezden gelin.</p>
+          <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0"/>
+          <p style="font-size:12px;color:#94a3b8">DriverAll • Sürücü Platformu</p>
+        </div>
+      `,
+    }).catch(() => {});
+
+    return res.json({ success: true, message: "Eğer bu e-posta kayıtlıysa, şifre sıfırlama bağlantısı gönderildi." });
+  } catch (err) {
+    console.error("POST /api/auth/forgot-password error:", err);
+    return res.status(500).json({ message: "Sunucu hatası." });
+  }
+});
+
+// ----------------------------------------------------------
+// POST /api/auth/reset-password
+// body: { email, code, newPassword }
+// ----------------------------------------------------------
+router.post("/reset-password", authLimiter, async (req, res) => {
+  try {
+    const email = String(req.body?.email || "").toLowerCase().trim();
+    const code = String(req.body?.code || "").trim();
+    const newPassword = req.body?.newPassword;
+
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ message: "E-posta, kod ve yeni şifre zorunludur." });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "Şifre en az 6 karakter olmalıdır." });
+    }
+
+    const hashedCode = crypto.createHash("sha256").update(code).digest("hex");
+
+    const user = await User.findOne({
+      email,
+      passwordResetToken: hashedCode,
+      passwordResetExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Kod geçersiz veya süresi dolmuş." });
+    }
+
+    user.passwordHash = await bcrypt.hash(newPassword, 12);
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    await user.save();
+
+    return res.json({ success: true, message: "Şifreniz başarıyla güncellendi. Giriş yapabilirsiniz." });
+  } catch (err) {
+    console.error("POST /api/auth/reset-password error:", err);
+    return res.status(500).json({ message: "Sunucu hatası." });
   }
 });
 
