@@ -469,8 +469,8 @@ export default function CandidateProfileCvEditor() {
 
     try {
       // Doğum tarihi validasyonu
-      if (!birthDate || !birthDate.trim()) {
-        throw new Error("Doğum tarihi zorunludur. Belge geçerlilik hesaplamaları için gereklidir.");
+      if (!birthDate || !birthDate.trim() || birthDate.startsWith("raw:")) {
+        throw new Error("Doğum tarihi zorunludur. Lütfen GG/AA/YYYY formatında girin.");
       }
 
       const token = getToken();
@@ -1413,10 +1413,29 @@ export default function CandidateProfileCvEditor() {
                   Doğum Tarihi <span className="text-red-400">*</span>
                 </label>
                 <input
-                  type="date"
+                  type="text"
                   required
-                  value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
+                  placeholder="GG/AA/YYYY"
+                  value={birthDate ? (() => {
+                    if (birthDate.startsWith("raw:")) return birthDate.slice(4);
+                    const parts = birthDate.split("-");
+                    return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : birthDate;
+                  })() : ""}
+                  onChange={(e) => {
+                    let v = e.target.value.replace(/[^0-9/]/g, "");
+                    // Auto-add slash after day and month
+                    if (v.length === 2 && !v.includes("/")) v += "/";
+                    else if (v.length === 5 && v.indexOf("/") === 2 && v.lastIndexOf("/") === 2) v += "/";
+                    if (v.length > 10) v = v.slice(0, 10);
+                    // Convert DD/MM/YYYY to YYYY-MM-DD for state
+                    const match = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                    if (match) {
+                      setBirthDate(`${match[3]}-${match[2]}-${match[1]}`);
+                    } else {
+                      // Store raw input temporarily with a prefix so display works
+                      setBirthDate(v.includes("/") ? `raw:${v}` : "");
+                    }
+                  }}
                   className="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-sm outline-none focus:border-sky-500"
                 />
                 {!birthDate && (
