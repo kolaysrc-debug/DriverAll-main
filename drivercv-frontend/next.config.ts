@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3001";
+const API_BASE =
+  process.env.INTERNAL_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://127.0.0.1:3001";
 
 const nextConfig = {
   async rewrites() {
     return [
-      // Frontend'den gelen tüm /api/* çağrılarını backend'e aktar
       {
         source: "/api/:path*",
         destination: `${API_BASE}/api/:path*`,
@@ -18,6 +20,14 @@ const nextConfig = {
   // Production optimizasyonları
   poweredByHeader: false,
   reactStrictMode: true,
+  // Standalone output for Docker deployment
+  output: "standalone",
+  // Image optimization
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**" },
+    ],
+  },
 };
 
 module.exports = nextConfig;
