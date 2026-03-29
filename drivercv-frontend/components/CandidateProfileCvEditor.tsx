@@ -1414,6 +1414,7 @@ export default function CandidateProfileCvEditor() {
                 </label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   required
                   placeholder="GG/AA/YYYY"
                   value={birthDate ? (() => {
@@ -1424,16 +1425,21 @@ export default function CandidateProfileCvEditor() {
                   onChange={(e) => {
                     let v = e.target.value.replace(/[^0-9/]/g, "");
                     // Auto-add slash after day and month
-                    if (v.length === 2 && !v.includes("/")) v += "/";
-                    else if (v.length === 5 && v.indexOf("/") === 2 && v.lastIndexOf("/") === 2) v += "/";
+                    const digits = v.replace(/\//g, "");
+                    if (digits.length >= 4) {
+                      v = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
+                    } else if (digits.length >= 2) {
+                      v = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+                    } else {
+                      v = digits;
+                    }
                     if (v.length > 10) v = v.slice(0, 10);
                     // Convert DD/MM/YYYY to YYYY-MM-DD for state
                     const match = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
                     if (match) {
                       setBirthDate(`${match[3]}-${match[2]}-${match[1]}`);
                     } else {
-                      // Store raw input temporarily with a prefix so display works
-                      setBirthDate(v.includes("/") ? `raw:${v}` : "");
+                      setBirthDate(v ? `raw:${v}` : "");
                     }
                   }}
                   className="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-sm outline-none focus:border-sky-500"
