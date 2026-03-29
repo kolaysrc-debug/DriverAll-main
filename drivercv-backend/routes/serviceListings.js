@@ -6,7 +6,7 @@
 const express = require("express");
 const router = express.Router();
 const ServiceListing = require("../models/ServiceListing");
-const { authMiddleware } = require("./auth");
+const { requireAuth } = require("../middleware/auth");
 
 // ===== Yardımcı =====
 function ensureServiceProvider(req, res, next) {
@@ -16,7 +16,7 @@ function ensureServiceProvider(req, res, next) {
 }
 
 // ===== GET /api/service-listings/mine — Kendi hizmetlerim =====
-router.get("/mine", authMiddleware, ensureServiceProvider, async (req, res) => {
+router.get("/mine", requireAuth, ensureServiceProvider, async (req, res) => {
   try {
     const list = await ServiceListing.find({ userId: req.user._id })
       .sort({ updatedAt: -1 })
@@ -28,7 +28,7 @@ router.get("/mine", authMiddleware, ensureServiceProvider, async (req, res) => {
 });
 
 // ===== GET /api/service-listings/:id — Tek hizmet detay =====
-router.get("/:id", authMiddleware, async (req, res) => {
+router.get("/:id", requireAuth, async (req, res) => {
   try {
     const doc = await ServiceListing.findById(req.params.id).lean();
     if (!doc) return res.status(404).json({ success: false, message: "Hizmet bulunamadı." });
@@ -39,7 +39,7 @@ router.get("/:id", authMiddleware, async (req, res) => {
 });
 
 // ===== POST /api/service-listings — Yeni hizmet oluştur =====
-router.post("/", authMiddleware, ensureServiceProvider, async (req, res) => {
+router.post("/", requireAuth, ensureServiceProvider, async (req, res) => {
   try {
     const body = req.body || {};
     const doc = new ServiceListing({
@@ -67,7 +67,7 @@ router.post("/", authMiddleware, ensureServiceProvider, async (req, res) => {
 });
 
 // ===== PUT /api/service-listings/:id — Hizmet güncelle =====
-router.put("/:id", authMiddleware, ensureServiceProvider, async (req, res) => {
+router.put("/:id", requireAuth, ensureServiceProvider, async (req, res) => {
   try {
     const doc = await ServiceListing.findOne({ _id: req.params.id, userId: req.user._id });
     if (!doc) return res.status(404).json({ success: false, message: "Hizmet bulunamadı veya yetkiniz yok." });
@@ -89,7 +89,7 @@ router.put("/:id", authMiddleware, ensureServiceProvider, async (req, res) => {
 });
 
 // ===== DELETE /api/service-listings/:id — Hizmet sil =====
-router.delete("/:id", authMiddleware, ensureServiceProvider, async (req, res) => {
+router.delete("/:id", requireAuth, ensureServiceProvider, async (req, res) => {
   try {
     const doc = await ServiceListing.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
     if (!doc) return res.status(404).json({ success: false, message: "Hizmet bulunamadı veya yetkiniz yok." });

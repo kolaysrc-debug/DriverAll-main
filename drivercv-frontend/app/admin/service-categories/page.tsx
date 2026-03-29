@@ -37,6 +37,7 @@ export default function AdminServiceCategoriesPage() {
   const [editing, setEditing] = useState<Cat | null>(null);
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -64,9 +65,11 @@ export default function AdminServiceCategoriesPage() {
   function openNew() {
     setEditing(null);
     setForm({ ...empty });
+    setShowForm(true);
   }
 
   function openEdit(cat: Cat) {
+    setShowForm(true);
     setEditing(cat);
     setForm({
       key: cat.key,
@@ -110,6 +113,7 @@ export default function AdminServiceCategoriesPage() {
       setInfo(editing ? "Güncellendi." : "Oluşturuldu.");
       setEditing(null);
       setForm({ ...empty });
+      setShowForm(false);
       await load();
     } catch (e: any) {
       setErr(e?.message || "Hata");
@@ -166,7 +170,7 @@ export default function AdminServiceCategoriesPage() {
           )}
 
           {/* Form */}
-          {(editing !== null || form.key !== "" || form.label !== "") && (
+          {showForm && (
             <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-3">
               <div className="text-sm font-semibold text-slate-100">{editing ? "Kategori Düzenle" : "Yeni Kategori"}</div>
               <div className="grid gap-3 md:grid-cols-3">
@@ -225,7 +229,7 @@ export default function AdminServiceCategoriesPage() {
                 <button onClick={onSave} disabled={saving} className="rounded-lg bg-violet-600 px-4 py-2 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-50 transition-colors">
                   {saving ? "Kaydediliyor…" : editing ? "Güncelle" : "Oluştur"}
                 </button>
-                <button onClick={() => { setEditing(null); setForm({ ...empty }); }} className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-xs text-slate-200 hover:bg-slate-800 transition-colors">İptal</button>
+                <button onClick={() => { setEditing(null); setForm({ ...empty }); setShowForm(false); }} className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-xs text-slate-200 hover:bg-slate-800 transition-colors">İptal</button>
               </div>
             </div>
           )}
