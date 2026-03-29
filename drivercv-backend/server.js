@@ -278,11 +278,17 @@ const publicServiceCategoriesRoutes = safeRequireAny(["./routes/publicServiceCat
 // Dashboard Stats
 const adminDashboardRoutes = safeRequireAny(["./routes/adminDashboard"], "adminDashboard");
 
+// Dashboard Layout (customizable nav bars)
+const adminDashboardLayoutRoutes = safeRequireAny(["./routes/adminDashboardLayout"], "adminDashboardLayout");
+
 // Commit Logs
 const adminCommitLogsRoutes = safeRequireAny(["./routes/adminCommitLogs"], "adminCommitLogs");
 
 // Uploads (avatar + document)
 const uploadsRoutes = safeRequireAny(["./routes/uploads"], "uploads");
+
+// Demo routes
+const demoRoutes = safeRequireAny(["./routes/demo"], "demo");
 
 // ----------------------------------------------------------
 // ROUTE MOUNT
@@ -409,7 +415,9 @@ if (serviceListingsRoutes) app.use("/api/service-listings", serviceListingsRoute
 if (adminServiceCategoriesRoutes) app.use("/api/admin/service-categories", adminServiceCategoriesRoutes);
 if (publicServiceCategoriesRoutes) app.use("/api/public/service-categories", publicServiceCategoriesRoutes);
 if (adminDashboardRoutes) app.use("/api/admin/dashboard", adminDashboardRoutes);
+if (adminDashboardLayoutRoutes) app.use("/api/admin/dashboard-layout", adminDashboardLayoutRoutes);
 if (adminCommitLogsRoutes) app.use("/api/admin/commit-logs", adminCommitLogsRoutes);
+if (demoRoutes) app.use("/api/demo", demoRoutes);
 
 // ----------------------------------------------------------
 // HEALTH CHECK

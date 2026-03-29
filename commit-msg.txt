@@ -1,0 +1,5 @@
+fix: runtime undefined value fallbacks for admin form inputs
+
+- admin/dynamic-roles: 7 input fields fixed (name, displayName, description, category, level, icon, color)
+- admin/groups: groupLabel fallback added
+- Full frontend scan (27 files, 156 patterns) — only these 2 files had missing fallbacks
