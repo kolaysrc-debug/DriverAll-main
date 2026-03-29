@@ -268,7 +268,7 @@ const AuthPageContent: React.FC = () => {
 
               <div className="mt-4 grid grid-cols-3 gap-3">
                 <a
-                  href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/auth/google`}
+                  href="/api/auth/google"
                   className="flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-4 py-3.5 text-sm font-medium text-slate-200 transition"
                 >
                   <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -281,7 +281,7 @@ const AuthPageContent: React.FC = () => {
                 </a>
 
                 <a
-                  href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/auth/yandex`}
+                  href="/api/auth/yandex"
                   className="flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-4 py-3.5 text-sm font-medium text-slate-200 transition"
                 >
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="#FC3F1D">
@@ -291,7 +291,7 @@ const AuthPageContent: React.FC = () => {
                 </a>
 
                 <a
-                  href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/auth/apple`}
+                  href="/api/auth/apple"
                   className="flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-4 py-3.5 text-sm font-medium text-slate-200 transition"
                 >
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
