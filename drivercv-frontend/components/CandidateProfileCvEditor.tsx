@@ -160,6 +160,7 @@ export default function CandidateProfileCvEditor() {
   const [creatingCv, setCreatingCv] = useState(false);
 
   const savingCvRef = useRef(false);
+  const districtSelectRef = useRef<HTMLSelectElement>(null);
   const autoSaveTimerRef = useRef<any>(null);
   const docsSaveTimerRef = useRef<any>(null);
 
@@ -515,6 +516,7 @@ export default function CandidateProfileCvEditor() {
       
       setProfileInfo("Profil başarıyla güncellendi! ✅");
       setTimeout(() => setProfileInfo(null), 3000);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -545,7 +547,10 @@ export default function CandidateProfileCvEditor() {
       }
 
       setCvDirty(false);
-      if (!options?.silent) setCvInfo("CV Güncellendi.");
+      if (!options?.silent) {
+        setCvInfo("CV Güncellendi.");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
       if (options?.lockAfter) setCvLocked(true);
     } catch (err: any) {
       setError(err?.message || "CV Kaydedilemedi.");
@@ -1335,7 +1340,7 @@ export default function CandidateProfileCvEditor() {
 
   return (
     <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center sticky top-0 z-30 bg-slate-950/95 backdrop-blur py-3 -mt-3">
           <h1 className="text-xl font-bold">Profil & CV Yönetimi</h1>
           <div className="flex items-center gap-2">
             <button
@@ -1347,7 +1352,7 @@ export default function CandidateProfileCvEditor() {
               {creatingCv ? "Hazırlanıyor..." : "CV Oluştur"}
             </button>
             <button
-              onClick={() => setCvLocked(!cvLocked)}
+              onClick={() => { setCvLocked(!cvLocked); window.scrollTo({ top: 0, behavior: "smooth" }); }}
               className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs transition"
               type="button"
             >
@@ -1472,6 +1477,7 @@ export default function CandidateProfileCvEditor() {
                       setCity(s?.name || "");
                       setDistrictCode("");
                       setDistrict("");
+                      setTimeout(() => districtSelectRef.current?.focus(), 150);
                     }}
                     className="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-xs outline-none"
                   >
@@ -1486,6 +1492,7 @@ export default function CandidateProfileCvEditor() {
                 <div className="space-y-1">
                   <label className="text-[10px] text-slate-400">İlçe</label>
                   <select
+                    ref={districtSelectRef}
                     value={districtCode}
                     onChange={(e) => {
                       const s = districtOptions.find((d) => d.code === e.target.value);
