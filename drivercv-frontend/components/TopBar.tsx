@@ -474,27 +474,12 @@ export default function TopBar() {
               Çıkış
             </button>
           ) : !hasToken ? (
-            <div className="flex items-center gap-2">
-              <Link
-                href="/register/auth"
-                className="hidden rounded-md border border-slate-700 bg-slate-900 px-3 py-1 text-sm text-slate-100 hover:bg-slate-800 md:inline-flex"
-              >
-                Giriş
-              </Link>
-              <Link
-                href="/register/auth"
-                className="hidden rounded-md bg-sky-500/20 px-3 py-1 text-sm font-semibold text-sky-200 hover:bg-sky-500/25 md:inline-flex"
-              >
-                Kayıt
-              </Link>
-
-              <Link
-                href="/register/auth"
-                className="inline-flex rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-sm text-slate-100 hover:bg-slate-800 md:hidden"
-              >
-                Giriş
-              </Link>
-            </div>
+            <Link
+              href="/register/auth"
+              className="rounded-md bg-emerald-500 px-4 py-1.5 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition"
+            >
+              Giriş / Kayıt
+            </Link>
           ) : (
             <>
               <button

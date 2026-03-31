@@ -160,6 +160,7 @@ export default function DriverDashboardPage() {
   }, []);
 
   /* -- derived -- */
+  const allLoaded = !profileLoading && !appsLoading && !jobsLoading;
   const completion = cvCompletion(profile);
   const appCounts = apps.reduce<Record<string, number>>((acc, a) => {
     acc[a.status] = (acc[a.status] || 0) + 1;
@@ -171,6 +172,19 @@ export default function DriverDashboardPage() {
   /* ---------------------------------------------------------------- */
   /*  RENDER                                                           */
   /* ---------------------------------------------------------------- */
+
+  if (!allLoaded) {
+    return (
+      <RoleGate allowRoles={["driver", "admin"]}>
+        <div className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-sky-400" />
+            <span className="text-sm text-slate-400">Yükleniyor…</span>
+          </div>
+        </div>
+      </RoleGate>
+    );
+  }
 
   return (
     <RoleGate allowRoles={["driver", "admin"]}>

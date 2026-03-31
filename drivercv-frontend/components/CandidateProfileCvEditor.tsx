@@ -161,6 +161,7 @@ export default function CandidateProfileCvEditor() {
 
   const savingCvRef = useRef(false);
   const districtSelectRef = useRef<HTMLSelectElement>(null);
+  const shouldFocusDistrictRef = useRef(false);
   const autoSaveTimerRef = useRef<any>(null);
   const docsSaveTimerRef = useRef<any>(null);
 
@@ -431,6 +432,10 @@ export default function CandidateProfileCvEditor() {
         setDistrictOptions(data.list || []);
       } finally {
         setLoadingDistricts(false);
+        if (shouldFocusDistrictRef.current) {
+          shouldFocusDistrictRef.current = false;
+          setTimeout(() => districtSelectRef.current?.focus(), 50);
+        }
       }
     }
     loadDistricts();
@@ -1340,7 +1345,7 @@ export default function CandidateProfileCvEditor() {
 
   return (
     <div className="space-y-6">
-        <div className="flex justify-between items-center sticky top-0 z-30 bg-slate-950/95 backdrop-blur py-3 -mt-3">
+        <div className="flex justify-between items-center sticky top-[100px] z-20 bg-slate-950/95 backdrop-blur py-3 -mt-3">
           <h1 className="text-xl font-bold">Profil & CV Yönetimi</h1>
           <div className="flex items-center gap-2">
             <button
@@ -1477,7 +1482,7 @@ export default function CandidateProfileCvEditor() {
                       setCity(s?.name || "");
                       setDistrictCode("");
                       setDistrict("");
-                      setTimeout(() => districtSelectRef.current?.focus(), 150);
+                      shouldFocusDistrictRef.current = true;
                     }}
                     className="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-xs outline-none"
                   >
