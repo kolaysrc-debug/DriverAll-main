@@ -85,7 +85,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
     <RoleGate>
       <div className="min-h-screen bg-slate-950 text-slate-100">
         {/* ── Üst Navigasyon ── */}
-        <nav className="sticky top-0 z-30 border-b border-slate-800 bg-slate-950/90 backdrop-blur-sm">
+        <nav className="sticky top-[52px] z-30 border-b border-slate-800 bg-slate-950/90 backdrop-blur-sm">
           <div className="mx-auto max-w-7xl px-4">
             <div className="flex h-12 items-center justify-between">
               {/* Hamburger — sadece mobil */}

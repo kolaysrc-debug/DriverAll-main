@@ -5,7 +5,7 @@
 // Admin — Hizmet Kategorileri CRUD
 // ----------------------------------------------------------
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import AdminOnly from "@/components/AdminOnly";
 import { authHeaders } from "@/lib/api/_core";
 
@@ -39,6 +39,10 @@ export default function AdminServiceCategoriesPage() {
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
+  const [availableCriteriaKeys, setAvailableCriteriaKeys] = useState<{key:string;label:string}[]>([]);
+  const [availableGroupKeys, setAvailableGroupKeys] = useState<{key:string;label:string}[]>([]);
+  const formRef = useRef<HTMLDivElement>(null);
+
   async function load() {
     setLoading(true);
     setErr(null);
@@ -54,7 +58,22 @@ export default function AdminServiceCategoriesPage() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); loadOptions(); }, []);
+
+  async function loadOptions() {
+    try {
+      const [fRes, gRes] = await Promise.all([
+        fetch("/api/admin/fields", { headers: authHeaders() }),
+        fetch("/api/admin/field-groups", { headers: authHeaders() }),
+      ]);
+      const fData = await fRes.json();
+      const gData = await gRes.json();
+      const fields = Array.isArray(fData?.fields) ? fData.fields : Array.isArray(fData) ? fData : [];
+      const groups = Array.isArray(gData?.groups) ? gData.groups : Array.isArray(gData) ? gData : [];
+      setAvailableCriteriaKeys(fields.map((f: any) => ({ key: String(f.key || "").trim(), label: String(f.label || f.key || "").trim() })).filter((f: any) => f.key));
+      setAvailableGroupKeys(groups.map((g: any) => ({ key: String(g.groupKey || g.key || "").trim(), label: String(g.label || g.groupKey || "").trim() })).filter((g: any) => g.key));
+    } catch { /* silent */ }
+  }
 
   useEffect(() => {
     if (!info) return;
@@ -66,10 +85,12 @@ export default function AdminServiceCategoriesPage() {
     setEditing(null);
     setForm({ ...empty });
     setShowForm(true);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
   }
 
   function openEdit(cat: Cat) {
     setShowForm(true);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     setEditing(cat);
     setForm({
       key: cat.key,
@@ -171,7 +192,7 @@ export default function AdminServiceCategoriesPage() {
 
           {/* Form */}
           {showForm && (
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-3">
+            <div ref={formRef} className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-3">
               <div className="text-sm font-semibold text-slate-100">{editing ? "Kategori Düzenle" : "Yeni Kategori"}</div>
               <div className="grid gap-3 md:grid-cols-3">
                 <div>
@@ -193,22 +214,52 @@ export default function AdminServiceCategoriesPage() {
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 <div>
-                  <label className={labelCls}>İlgili Kriter Key'leri (virgülle)</label>
-                  <input
-                    value={Array.isArray(form.relatedCriteriaKeys) ? form.relatedCriteriaKeys.join(", ") : form.relatedCriteriaKeys}
-                    onChange={(e) => setForm({ ...form, relatedCriteriaKeys: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
-                    className={inputCls}
-                    placeholder="SRC1_TR, SRC2_TR"
-                  />
+                  <label className={labelCls}>İlgili Kriter Key'leri</label>
+                  <div className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-slate-700 bg-slate-950 p-2 space-y-1">
+                    {availableCriteriaKeys.length === 0 ? (
+                      <span className="text-xs text-slate-500">Yükleniyor…</span>
+                    ) : availableCriteriaKeys.map((ck) => (
+                      <label key={ck.key} className="flex items-center gap-2 px-1 py-0.5 rounded hover:bg-slate-900 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={(form.relatedCriteriaKeys || []).includes(ck.key)}
+                          onChange={(e) => {
+                            const arr = [...(form.relatedCriteriaKeys || [])];
+                            if (e.target.checked) { if (!arr.includes(ck.key)) arr.push(ck.key); }
+                            else { const idx = arr.indexOf(ck.key); if (idx >= 0) arr.splice(idx, 1); }
+                            setForm({ ...form, relatedCriteriaKeys: arr });
+                          }}
+                          className="h-3.5 w-3.5 rounded border-slate-600 bg-slate-950 text-violet-500"
+                        />
+                        <span className="text-xs text-slate-200">{ck.label}</span>
+                        <span className="text-[10px] text-slate-500 font-mono">{ck.key}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
                 <div>
-                  <label className={labelCls}>İlgili Grup Key'leri (virgülle)</label>
-                  <input
-                    value={Array.isArray(form.relatedGroupKeys) ? form.relatedGroupKeys.join(", ") : form.relatedGroupKeys}
-                    onChange={(e) => setForm({ ...form, relatedGroupKeys: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
-                    className={inputCls}
-                    placeholder="SRC_TR"
-                  />
+                  <label className={labelCls}>İlgili Grup Key'leri</label>
+                  <div className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-slate-700 bg-slate-950 p-2 space-y-1">
+                    {availableGroupKeys.length === 0 ? (
+                      <span className="text-xs text-slate-500">Yükleniyor…</span>
+                    ) : availableGroupKeys.map((gk) => (
+                      <label key={gk.key} className="flex items-center gap-2 px-1 py-0.5 rounded hover:bg-slate-900 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={(form.relatedGroupKeys || []).includes(gk.key)}
+                          onChange={(e) => {
+                            const arr = [...(form.relatedGroupKeys || [])];
+                            if (e.target.checked) { if (!arr.includes(gk.key)) arr.push(gk.key); }
+                            else { const idx = arr.indexOf(gk.key); if (idx >= 0) arr.splice(idx, 1); }
+                            setForm({ ...form, relatedGroupKeys: arr });
+                          }}
+                          className="h-3.5 w-3.5 rounded border-slate-600 bg-slate-950 text-violet-500"
+                        />
+                        <span className="text-xs text-slate-200">{gk.label}</span>
+                        <span className="text-[10px] text-slate-500 font-mono">{gk.key}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div className="grid gap-3 md:grid-cols-3">
