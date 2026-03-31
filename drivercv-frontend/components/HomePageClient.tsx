@@ -590,26 +590,6 @@ function HomePageContent(props: HomePageClientProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-50">
 
-      {/* ── NAVBAR (Kompakt) — sadece logged-out'ta göster, logged-in'de TopBar zaten var ── */}
-      {!sessionToken && (
-        <nav className="sticky top-0 z-30 border-b border-slate-800/60 bg-slate-950/95 backdrop-blur-md">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-2 sm:px-6">
-            <Link href="/" className="inline-flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold text-xs">D</div>
-              <div className="hidden sm:block">
-                <div className="text-xs font-bold leading-tight">DriverAll</div>
-                <div className="text-[9px] text-slate-500 leading-tight">Sürücü İş Platformu</div>
-              </div>
-            </Link>
-            <div className="flex items-center gap-2">
-              <Link href="/jobs" className="text-xs sm:text-sm text-slate-300 hover:text-white transition">İlanlar</Link>
-              <Link href="/register/auth" className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-100 hover:bg-slate-800 transition">Giriş</Link>
-              <Link href="/register/auth" className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-emerald-400 transition">Kayıt</Link>
-            </div>
-          </div>
-        </nav>
-      )}
-
       {/* ── HERO (Kompakt, Görsel) ── */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(16,185,129,0.12),transparent)]" />

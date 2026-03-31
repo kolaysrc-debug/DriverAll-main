@@ -359,9 +359,11 @@ export default function TopBar() {
     // Giriş yapılmışsa her zaman ana sayfa linki göster
     if (hasToken) {
       items.push({ href: "/", label: "Ana Sayfa" });
+      items.push({ href: dashboardHref, label: "Dashboard" });
+    } else {
+      items.push({ href: "/jobs", label: "İlanlar" });
+      return items;
     }
-
-    items.push({ href: dashboardHref, label: "Dashboard" });
 
     if (isAdmin) {
       items.push(
