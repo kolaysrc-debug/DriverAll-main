@@ -54,46 +54,54 @@ const AuthPageContent: React.FC = () => {
           }
 
           setSuccess("Giriş başarılı.");
-          // Profil doldurmaya yönlendirme
           goAfterAuth();
           return;
         }
-      } catch (err: any) {
-        // Login hata verdiyse kontrol et
-        if (!err.message?.includes("Kullanıcı bulunamadı")) {
-          // Kullanıcı var ama şifre yanlış vs.
-          throw err;
+      } catch (loginErr: any) {
+        // 403 = hesap bloklu/onay bekliyor → kullanıcıya göster
+        // 500 = sunucu hatası → kullanıcıya göster
+        const msg = String(loginErr?.message || "");
+        if (msg.includes("pasif") || msg.includes("bloklu") || msg.includes("onay") || msg.includes("Sunucu hatası")) {
+          throw loginErr;
         }
-        // Eğer "Kullanıcı bulunamadı" ise -> arkada kayıt + login yapacağız
+        // Diğer hatalar (400: "E-posta veya şifre hatalı" vs.) → kayıt dene
       }
 
-      // 2) Buraya geldiysek: kullanıcı yok, otomatik kayıt et
+      // 2) Buraya geldiysek: kullanıcı yok veya şifre uyuşmadı, kayıt dene
       const displayName = name.trim() || email.split("@")[0];
 
-      const regRes = await registerUser({
-        name: displayName,
-        email,
-        password,
-        role: "driver", // varsayılan rol
-      });
+      try {
+        const regRes = await registerUser({
+          name: displayName,
+          email,
+          password,
+          role: "driver",
+        });
 
-      if (!regRes.user) {
-        throw new Error(regRes.message || "Kayıt sırasında beklenmeyen hata.");
-      }
-
-      // 3) Kayıttan sonra otomatik login
-      const loginRes = await loginUser({ email, password });
-
-      if (loginRes.token && loginRes.user) {
-        if (typeof window !== "undefined") {
-          localStorage.setItem("token", loginRes.token);
-          localStorage.setItem("user", JSON.stringify(loginRes.user));
+        if (!regRes.user) {
+          throw new Error(regRes.message || "Kayıt sırasında beklenmeyen hata.");
         }
 
-        setSuccess("Kayıt ve giriş başarılı.");
-        goAfterAuth();
-      } else {
-        throw new Error("Giriş beklenmedik bir şekilde başarısız oldu.");
+        // 3) Kayıttan sonra otomatik login
+        const loginRes = await loginUser({ email, password });
+
+        if (loginRes.token && loginRes.user) {
+          if (typeof window !== "undefined") {
+            localStorage.setItem("token", loginRes.token);
+            localStorage.setItem("user", JSON.stringify(loginRes.user));
+          }
+
+          setSuccess("Kayıt ve giriş başarılı.");
+          goAfterAuth();
+        } else {
+          throw new Error("Giriş beklenmedik bir şekilde başarısız oldu.");
+        }
+      } catch (regErr: any) {
+        const regMsg = String(regErr?.message || "");
+        if (regMsg.includes("zaten bir hesap var") || regMsg.includes("already")) {
+          throw new Error("Bu e-posta ile kayıtlı hesap var. Lütfen şifrenizi kontrol edin veya 'Şifremi unuttum' bağlantısını kullanın.");
+        }
+        throw regErr;
       }
     } catch (err: any) {
       setError(err.message || "İşlem sırasında bir hata oluştu.");
