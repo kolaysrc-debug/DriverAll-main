@@ -162,6 +162,7 @@ export default function CandidateProfileCvEditor() {
   const savingCvRef = useRef(false);
   const districtSelectRef = useRef<HTMLSelectElement>(null);
   const shouldFocusDistrictRef = useRef(false);
+  const [highlightDistrict, setHighlightDistrict] = useState(false);
   const autoSaveTimerRef = useRef<any>(null);
   const docsSaveTimerRef = useRef<any>(null);
 
@@ -434,7 +435,12 @@ export default function CandidateProfileCvEditor() {
         setLoadingDistricts(false);
         if (shouldFocusDistrictRef.current) {
           shouldFocusDistrictRef.current = false;
-          setTimeout(() => districtSelectRef.current?.focus(), 50);
+          setTimeout(() => {
+            districtSelectRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+            districtSelectRef.current?.focus();
+            setHighlightDistrict(true);
+            setTimeout(() => setHighlightDistrict(false), 2000);
+          }, 80);
         }
       }
     }
@@ -1504,7 +1510,7 @@ export default function CandidateProfileCvEditor() {
                       setDistrictCode(e.target.value);
                       setDistrict(s?.name || "");
                     }}
-                    className="w-full bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-xs outline-none"
+                    className={`w-full bg-slate-950 border p-2.5 rounded-xl text-xs outline-none transition-all duration-300 ${highlightDistrict ? "border-emerald-400 ring-2 ring-emerald-400/40 animate-pulse" : "border-slate-800"}`}
                   >
                     <option value="">{loadingDistricts ? "Yükleniyor..." : "İlçe Seçin"}</option>
                     {districtOptions.map((d) => (
