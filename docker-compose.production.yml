@@ -1,3 +1,6 @@
+# Production: TLS için ./nginx/certs/fullchain.pem ve privkey.pem gerekir.
+# Backend: drivercv-backend/.env oluşturun (şablon: drivercv-backend/.env.example).
+# İstemci tarafı API adresi: NEXT_PUBLIC_APP_URL=https://alanadiniz.com (boş bırakılırsa tarayıcıda aynı kök /api).
 version: "3.8"
 
 services:
@@ -43,14 +46,15 @@ services:
       dockerfile: Dockerfile
       args:
         INTERNAL_API_URL: http://backend:3001
-        NEXT_PUBLIC_API_URL: http://backend:3001
+        # Boş = tarayıcıda aynı kök üzerinden /api (nginx proxy). Mutlak URL için .env ile NEXT_PUBLIC_APP_URL kullanın.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_APP_URL:-}
     container_name: driverall-frontend
     restart: always
     expose:
       - "3000"
     environment:
       INTERNAL_API_URL: http://backend:3001
-      NEXT_PUBLIC_API_URL: http://backend:3001
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_APP_URL:-}
       NODE_ENV: production
     depends_on:
       - backend

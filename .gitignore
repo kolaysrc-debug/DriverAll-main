@@ -18,3 +18,5 @@ handoff/*.zip
 .next/
 dist/
 backups/
+deploy-credentials.txt
+kurulum/deploy-credentials.txt

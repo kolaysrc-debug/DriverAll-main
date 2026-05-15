@@ -1,3 +1,5 @@
+const path = require("path");
+
 /** @type {import('next').NextConfig} */
 const API_BASE =
   process.env.INTERNAL_API_URL ||
@@ -5,6 +7,9 @@ const API_BASE =
   "http://127.0.0.1:3001";
 
 const nextConfig = {
+  turbopack: {
+    root: path.join(__dirname),
+  },
   async rewrites() {
     return [
       {
