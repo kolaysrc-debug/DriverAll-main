@@ -5,6 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import TopBar from "@/components/TopBar";
 import CookieConsent from "@/components/CookieConsent";
+import { LanguageProvider } from "@/lib/LanguageContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,27 +49,31 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr">
+    <html lang="tr" className="da-ui-v4">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-950 text-slate-50`}
+        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased min-h-screen`}
+        style={{ color: "var(--da-text)", backgroundColor: "var(--da-bg)" }}
       >
         {/* Üst menü ve Çıkış Yap butonu */}
-        <TopBar />
+        <LanguageProvider>
+          <TopBar />
 
-        {/* Sayfa içerikleri */}
-        <main className="min-h-screen">{children}</main>
+          {/* Sayfa içerikleri */}
+          <main className="min-h-screen">{children}</main>
 
-        {/* Footer */}
-        <footer className="border-t border-slate-800/60 bg-slate-950 py-6 px-4 text-center text-xs text-slate-500">
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <span>© {new Date().getFullYear()} DriverAll</span>
-            <a href="/legal/privacy" className="hover:text-emerald-400 transition-colors">Gizlilik Politikası</a>
-            <a href="/legal/terms" className="hover:text-emerald-400 transition-colors">Kullanım Koşulları</a>
-          </div>
-        </footer>
+          {/* Footer */}
+          <footer className="border-t py-10 px-4 text-center text-xs" style={{ borderColor: "var(--da-border)", backgroundColor: "var(--da-bg-card)" }}>
+            <div className="v3-glow-line mx-auto mb-6 max-w-md" aria-hidden />
+            <div className="flex flex-wrap items-center justify-center gap-5">
+              <span style={{ color: "var(--da-text-2)" }}>© {new Date().getFullYear()} DriverAll</span>
+              <a href="/legal/privacy" className="transition-colors hover:text-blue-400" style={{ color: "var(--da-text-3)" }}>Gizlilik Politikası</a>
+              <a href="/legal/terms" className="transition-colors hover:text-blue-400" style={{ color: "var(--da-text-3)" }}>Kullanım Koşulları</a>
+            </div>
+          </footer>
 
-        {/* Cookie Consent Banner */}
-        <CookieConsent />
+          {/* Cookie Consent Banner */}
+          <CookieConsent />
+        </LanguageProvider>
       </body>
     </html>
   );

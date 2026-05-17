@@ -40,7 +40,7 @@ app.use(cors({
   origin(origin, cb) {
     // Sunucu-arası (curl vb.) veya izin verilen origin
     if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
-    cb(new Error("CORS policy: origin not allowed"));
+    return cb(null, false);
   },
   credentials: true,
 }));

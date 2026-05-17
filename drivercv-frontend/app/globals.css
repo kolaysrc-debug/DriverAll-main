@@ -1,485 +1,213 @@
 @import "tailwindcss";
+@import "../theme-backup/legacy-da-classes.css";
+
+/* DriverAll UI v4 — Derin lacivert / güçlü kontrast (referans: Kariyer.net, Workable, Ashby) */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Zemin */
+  --da-bg:          #07101E;
+  --da-bg-card:     #0C1829;
+  --da-bg-card-2:   #102035;
+  --da-bg-section:  #0A1525;
+
+  /* Borderlar — gerçekten görünür */
+  --da-border:      #1C2E46;
+  --da-border-med:  #243850;
+  --da-border-str:  #2E4A68;
+
+  /* Mavi — ana renk */
+  --da-blue:        #3B82F6;
+  --da-blue-hover:  #60A5FA;
+  --da-blue-dark:   #1D4ED8;
+  --da-blue-glow:   rgba(59,130,246,0.3);
+  --da-blue-dim:    rgba(59,130,246,0.12);
+
+  /* Yeşil — ikincil / "aktif" */
+  --da-green:       #10B981;
+  --da-green-hover: #34D399;
+  --da-green-dark:  #047857;
+  --da-green-glow:  rgba(16,185,129,0.25);
+  --da-green-dim:   rgba(16,185,129,0.1);
+
+  /* Turuncu — premium / highlight */
+  --da-orange:      #F97316;
+  --da-orange-dim:  rgba(249,115,22,0.12);
+
+  /* Metin */
+  --da-text:        #EFF6FF;
+  --da-text-2:      #94A3B8;
+  --da-text-3:      #4E6A8A;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--da-bg);
+  --color-foreground: var(--da-text);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-/* -------- DriverAll genel tema -------- */
-
-:root {
-  --da-bg: #020617; /* çok koyu gece mavisi */
-  --da-bg-soft: #02091f;
-  --da-card-bg: #020617;
-  --da-border-subtle: rgba(148, 163, 184, 0.35);
-  --da-text-main: #e5e7eb;
-  --da-text-soft: #9ca3af;
-  --da-accent: #38bdf8; /* turkuaz-mavi vurgu */
-  --da-accent-soft: rgba(56, 189, 248, 0.1);
-  --da-danger: #fb7185;
-  --da-radius-lg: 18px;
-  --da-radius-md: 10px;
-  --da-shadow-soft: 0 22px 50px rgba(15, 23, 42, 0.9);
-  --da-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-}
-
-/* İleride açık tema istersek böyle kullanılabilir
-html.da-light {
-  --da-bg: #f9fafb;
-  --da-bg-soft: #eff3ff;
-  --da-card-bg: #ffffff;
-  --da-text-main: #020617;
-  --da-text-soft: #6b7280;
-}
-*/
-
-html,
-body {
+html.da-ui-v4,
+html.da-ui-v4 body {
   padding: 0;
   margin: 0;
-  font-family: var(--da-font);
-  background: radial-gradient(circle at top, #02091f 0, #020617 45%, #000 100%);
-  color: var(--da-text-main);
+  min-height: 100%;
 }
 
-/* Ana layout */
+html.da-ui-v4 body {
+  font-family: var(--font-geist-sans, var(--font-sans)), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  color: var(--da-text);
+  background-color: var(--da-bg);
+  background-image:
+    radial-gradient(ellipse 90% 55% at 50% -5%, rgba(59,130,246,0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 40% at 95% 8%,  rgba(16,185,129,0.10) 0%, transparent 50%),
+    radial-gradient(ellipse 45% 35% at 5%  85%, rgba(59,130,246,0.07) 0%, transparent 50%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
 
-.da-page {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  gap: 0;
+html.da-ui-v4 ::selection {
+  background: rgba(59,130,246,0.35);
+  color: #fff;
+}
+
+html.da-ui-v4 :focus-visible {
+  outline: 2px solid rgba(59,130,246,0.7);
+  outline-offset: 2px;
+}
+
+/* ── Kart yüzeyleri ─────────────────────────────────────────── */
+
+html.da-ui-v4 .da-card {
+  background: var(--da-bg-card);
+  border: 1px solid var(--da-border);
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.04) inset;
+}
+
+html.da-ui-v4 .da-card:hover {
+  border-color: var(--da-border-med);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.45);
+}
+
+/* v3-panel uyumluluğu korunuyor, v4'te çok daha görünür */
+html.da-ui-v4 .v3-panel {
+  background: var(--da-bg-card);
+  border: 1px solid var(--da-border-med);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 40px rgba(0,0,0,0.5),
+    0 1px 0 rgba(255,255,255,0.05) inset;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* ── Butonlar ───────────────────────────────────────────────── */
+
+html.da-ui-v4 .da-btn-primary {
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(59,130,246,0.45), 0 1px 0 rgba(255,255,255,0.12) inset;
+  transition: all 0.15s ease;
+}
+html.da-ui-v4 .da-btn-primary:hover {
+  background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%);
+  box-shadow: 0 6px 20px rgba(59,130,246,0.6);
+  transform: translateY(-1px);
+}
+
+html.da-ui-v4 .da-btn-green {
+  background: linear-gradient(135deg, #10B981 0%, #047857 100%);
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(16,185,129,0.4), 0 1px 0 rgba(255,255,255,0.12) inset;
+  transition: all 0.15s ease;
+}
+html.da-ui-v4 .da-btn-green:hover {
+  background: linear-gradient(135deg, #34D399 0%, #10B981 100%);
+  box-shadow: 0 6px 20px rgba(16,185,129,0.55);
+  transform: translateY(-1px);
+}
+
+html.da-ui-v4 .da-btn-ghost {
   background: transparent;
+  border: 1px solid var(--da-border-str);
+  color: var(--da-text-2);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+html.da-ui-v4 .da-btn-ghost:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: var(--da-border-med);
+  color: var(--da-text);
 }
 
-/* Sol panel */
+/* ── Input ──────────────────────────────────────────────────── */
 
-.da-left {
-  position: relative;
-  padding: 32px 64px;
-  overflow: hidden;
-  background: radial-gradient(circle at top left, #0b1120 0, #020617 55%, #000 100%);
-  border-right: 1px solid rgba(148, 163, 184, 0.2);
+html.da-ui-v4 .da-input {
+  background: #060F1C;
+  border: 1.5px solid var(--da-border-med);
+  color: var(--da-text);
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-
-.da-left-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 40px;
+html.da-ui-v4 .da-input::placeholder {
+  color: var(--da-text-3);
 }
-
-.da-logo-mark {
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #38bdf8, #6366f1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 18px;
-  letter-spacing: 0.08em;
-  color: #0b1120;
-  box-shadow: 0 10px 30px rgba(56, 189, 248, 0.7);
-}
-
-.da-logo-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.da-logo-title {
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.da-logo-sub {
-  font-size: 12px;
-  color: var(--da-text-soft);
-}
-
-/* Orbit grafik */
-
-.da-hero {
-  position: absolute;
-  inset: 50% auto auto 50%;
-  transform: translate(-40%, -60%);
-  width: 320px;
-  height: 320px;
-}
-
-.da-orbit {
-  position: absolute;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.04), transparent);
-}
-
-.da-orbit-lg {
-  inset: 0;
-}
-
-.da-orbit-md {
-  inset: 40px;
-  border-style: dashed;
-}
-
-.da-orbit-sm {
-  inset: 90px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: radial-gradient(circle at top, #38bdf8, #0f172a);
-  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.95);
-}
-
-.da-orbit-sm span {
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  color: #e5e7eb;
-}
-
-/* Sol metin bloğu */
-
-.da-left-text {
-  position: relative;
-  max-width: 420px;
-  margin-top: 80px;
-}
-
-.da-left-text h1 {
-  font-size: 32px;
-  line-height: 1.25;
-  margin-bottom: 14px;
-}
-
-.da-left-text p {
-  font-size: 14px;
-  color: var(--da-text-soft);
-  margin-bottom: 28px;
-}
-
-.da-accent {
-  color: var(--da-accent);
-}
-
-.da-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
-}
-
-.da-stat-item {
-  padding: 10px 14px;
-  background: rgba(15, 23, 42, 0.85);
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  backdrop-filter: blur(6px);
-}
-
-.da-stat-number {
-  font-weight: 700;
-  margin-right: 6px;
-}
-
-.da-stat-label {
-  font-size: 11px;
-  color: var(--da-text-soft);
-}
-
-/* Sağ panel / kart */
-
-.da-right {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px 32px;
-  background: radial-gradient(circle at top right, #02091f 0, #020617 50%, #000 100%);
-}
-
-.da-card {
-  width: 100%;
-  max-width: 420px;
-  padding: 32px 28px 26px;
-  border-radius: var(--da-radius-lg);
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.96));
-  border: 1px solid var(--da-border-subtle);
-  box-shadow: var(--da-shadow-soft);
-}
-
-.da-card h2 {
-  font-size: 24px;
-  margin: 0 0 6px;
-}
-
-.da-card-sub {
-  font-size: 13px;
-  color: var(--da-text-soft);
-  margin-bottom: 22px;
-}
-
-/* Form alanları */
-
-.da-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.da-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.da-field span {
-  font-size: 13px;
-  color: var(--da-text-soft);
-}
-
-.da-field input {
-  height: 40px;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  padding: 0 14px;
-  background: rgba(15, 23, 42, 0.9);
-  color: var(--da-text-main);
-  font-size: 13px;
+html.da-ui-v4 .da-input:focus {
+  border-color: var(--da-blue);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.18);
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
-.da-field input::placeholder {
-  color: rgba(148, 163, 184, 0.7);
-}
+/* ── Rozet / etiket ─────────────────────────────────────────── */
 
-.da-field input:focus {
-  border-color: var(--da-accent);
-  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.5);
-  background: rgba(15, 23, 42, 1);
-}
-
-.da-form-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 4px;
-  margin-bottom: 4px;
-}
-
-.da-checkbox {
+html.da-ui-v4 .da-badge {
+  background: var(--da-blue-dim);
+  border: 1px solid rgba(59,130,246,0.3);
+  color: #93C5FD;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--da-text-soft);
 }
 
-.da-checkbox input {
-  width: 14px;
-  height: 14px;
+html.da-ui-v4 .da-badge-green {
+  background: var(--da-green-dim);
+  border: 1px solid rgba(16,185,129,0.3);
+  color: #6EE7B7;
 }
 
-/* Butonlar */
-
-.da-primary-btn {
-  margin-top: 4px;
-  width: 100%;
-  height: 42px;
-  border-radius: 999px;
-  border: none;
-  font-size: 14px;
-  font-weight: 600;
-  background: linear-gradient(135deg, #38bdf8, #6366f1);
-  color: #0b1120;
-  cursor: pointer;
-  box-shadow: 0 16px 40px rgba(37, 99, 235, 0.7);
-  transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.1s ease;
+html.da-ui-v4 .da-badge-orange {
+  background: var(--da-orange-dim);
+  border: 1px solid rgba(249,115,22,0.3);
+  color: #FCA975;
 }
 
-.da-primary-btn:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.03);
-}
+/* ── Ayırıcı çizgiler ───────────────────────────────────────── */
 
-.da-primary-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.7);
-}
-
-.da-link-button {
-  border: none;
-  background: transparent;
-  color: var(--da-accent);
-  font-size: 12px;
-  cursor: pointer;
-  padding: 0;
-}
-
-.da-link-button:hover {
-  text-decoration: underline;
-}
-
-/* Sosyal giriş */
-
-.da-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin: 18px 0 10px;
-  font-size: 11px;
-  color: var(--da-text-soft);
-}
-
-.da-divider::before,
-.da-divider::after {
-  content: "";
-  flex: 1;
+html.da-ui-v4 .v3-glow-line {
   height: 1px;
-  background: radial-gradient(circle, rgba(148, 163, 184, 0.5), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(59,130,246,0.65),
+    rgba(16,185,129,0.45),
+    transparent
+  );
 }
 
-.da-socials {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+html.da-ui-v4 .da-section-divider {
+  border-top: 1px solid var(--da-border);
 }
 
-.da-social-btn {
-  width: 100%;
-  height: 38px;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  background: rgba(15, 23, 42, 0.95);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--da-text-main);
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
-}
-
-.da-social-btn:hover {
-  background: rgba(15, 23, 42, 1);
-  border-color: rgba(148, 163, 184, 0.7);
-  transform: translateY(-1px);
-}
-
-.da-social-icon {
-  width: 20px;
-  height: 20px;
-  border-radius: 999px;
-  background: #0b1120;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: #e5e7eb;
-}
-
-/* Alt linkler */
-
-.da-footer-links {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin: 12px 0 8px;
-  font-size: 12px;
-  color: var(--da-text-soft);
-}
-
-.da-employer-link {
-  margin-top: 4px;
-  width: 100%;
-  border-radius: var(--da-radius-md);
-  border: 1px dashed rgba(148, 163, 184, 0.5);
-  background: rgba(15, 23, 42, 0.85);
-  padding: 8px 10px;
-  font-size: 11px;
-  color: var(--da-text-soft);
-  display: flex;
-  justify-content: center;
-  gap: 4px;
-  cursor: pointer;
-}
-
-.da-employer-link span {
-  color: var(--da-accent);
-}
-
-/* Responsive */
-
-@media (max-width: 960px) {
-  .da-page {
-    grid-template-columns: 1fr;
-  }
-
-  .da-left {
-    padding: 24px 20px 160px;
-    border-right: none;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
-  }
-
-  .da-hero {
-    opacity: 0.4;
-    transform: translate(-40%, -70%) scale(0.8);
-  }
-
-  .da-left-text {
-    max-width: 100%;
-    margin-top: 40px;
-  }
-
-  .da-right {
-    padding: 20px;
-  }
-
-  .da-card {
-    max-width: 100%;
-  }
-}
-
-@media (max-width: 600px) {
-  .da-left {
-    display: none; /* İstersen burayı kaldırıp mobilde de gösterebilirsin */
-  }
-
-  .da-page {
-    grid-template-columns: 1fr;
-  }
-
-  .da-right {
-    padding: 20px 14px;
-  }
-
-  .da-card {
-    padding: 24px 18px 18px;
-  }
-}
- 
+/* ── Eski temaya dönüş: html'den da-ui-v4 kaldır →
+   globals-legacy-2026-full.css kullan (theme-backup/README.md) ── */
